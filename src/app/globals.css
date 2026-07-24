@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+/*
+  ELAN INNOVATE DESIGN TOKENS
+  Direct brutalist system. No gradients, no soft shadows, no rounded corners.
+  strike  = the only action/emphasis color
+  ink     = black foundation
+  paper   = off-white foundation
+  navy    = content blocks
+  peri    = supporting accent shapes only, always at 50% (use peri/50)
+*/
+@theme inline {
+  --color-strike: #ff6a00;
+  --color-ink: #000000;
+  --color-paper: #fffffc;
+  --color-navy: #010164;
+  --color-peri: #6666ff;
+
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    border-radius: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-strike);
+    color: var(--color-paper);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-strike);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .animate-marquee {
+    animation: marquee 20s linear infinite;
+  }
+}
