@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { site } from "@/lib/site";
 
 export default function Navbar() {
   return (
@@ -21,12 +20,12 @@ export default function Navbar() {
         >
           About
         </Link>
-        <a
-          href={`mailto:${site.email}`}
+        <Link
+          href="/about#contact"
           className="text-sm font-bold uppercase tracking-wide hover:text-strike"
         >
           Contact
-        </a>
+        </Link>
       </div>
 
       {/* Right: apply */}
