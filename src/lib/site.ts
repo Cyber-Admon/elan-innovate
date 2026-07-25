@@ -36,7 +36,7 @@ export const leadership = [
   {
     name: "Mujisatullahi Adedunke Bakare",
     role: "Director of Operations",
-    photo: "/team/mujisatullahi.png",
+    photo: "/team/mujisatullahi.jpeg",
     bio: "Brand strategist and operator. Runs timelines and delivery across the firm and co-hosts the programs.",
   },
   {

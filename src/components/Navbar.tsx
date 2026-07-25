@@ -21,6 +21,12 @@ export default function Navbar() {
           About
         </Link>
         <Link
+          href="/services"
+          className="text-sm font-bold uppercase tracking-wide hover:text-strike"
+        >
+          Services
+        </Link>
+        <Link
           href="/about#contact"
           className="text-sm font-bold uppercase tracking-wide hover:text-strike"
         >
