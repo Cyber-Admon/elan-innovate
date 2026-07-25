@@ -5,8 +5,8 @@ const pillars = [
     number: "01",
     name: "Agency Services",
     body: "Legal, branding, marketing, and consultation for businesses that already exist. Real work, delivered by our team, priced by the value it creates.",
-    status: "Available now",
-    open: false,
+    cta: "See our services",
+    ctaHref: "/services",
     icon: (
       <svg viewBox="0 0 32 32" fill="none" strokeWidth="2.5" aria-hidden="true" className="h-8 w-8 stroke-paper">
         <rect x="5" y="5" width="22" height="22" />
@@ -19,8 +19,9 @@ const pillars = [
     number: "02",
     name: "Incubation",
     body: "For entrepreneurs starting with an idea. We help you turn it into a real business with structure, guidance, and a community building alongside you.",
-    status: "Applications open",
-    open: true,
+    cta: "Apply to the Incubator",
+    ctaHref: "/apply",
+    accent: true,
     icon: (
       <svg viewBox="0 0 32 32" fill="none" strokeWidth="2.5" aria-hidden="true" className="h-8 w-8 stroke-strike">
         <path d="M16 4 L28 16 L16 28 L4 16 Z" />
@@ -33,7 +34,6 @@ const pillars = [
     name: "Acceleration",
     body: "For businesses ready for their next stage. Training, strategy, and consultative sessions that push what you've built toward scale.",
     status: "Opening later",
-    open: false,
     icon: (
       <svg viewBox="0 0 32 32" fill="none" strokeWidth="2.5" aria-hidden="true" className="h-8 w-8 stroke-paper">
         <polyline points="4,24 12,16 18,20 28,8" />
@@ -78,12 +78,16 @@ export default function Pillars() {
             <p className="mb-8 text-sm font-medium leading-relaxed text-paper/80 md:text-base">
               {pillar.body}
             </p>
-            {pillar.open ? (
+            {pillar.cta ? (
               <Link
-                href="/apply"
-                className="mt-auto self-start bg-strike px-5 py-3 text-xs font-bold uppercase tracking-widest text-paper transition-colors hover:bg-paper hover:text-ink md:text-sm"
+                href={pillar.ctaHref}
+                className={`mt-auto self-start px-5 py-3 text-xs font-bold uppercase tracking-widest transition-colors md:text-sm ${
+                  pillar.accent
+                    ? "bg-strike text-paper hover:bg-paper hover:text-ink"
+                    : "border-2 border-paper text-paper hover:bg-paper hover:text-ink"
+                }`}
               >
-                {pillar.status} &rarr;
+                {pillar.cta} &rarr;
               </Link>
             ) : (
               <p className="mt-auto self-start border-2 border-paper px-5 py-3 text-xs font-bold uppercase tracking-widest text-paper/70 md:text-sm">

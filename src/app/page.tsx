@@ -5,6 +5,7 @@ import Program from "@/components/Program";
 import Leadership from "@/components/LeadershipTeaser";
 import Footer from "@/components/Footer";
 import Story from "@/components/Story";
+import ServicesBand from "@/components/ServicesBand";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <WhoItsFor />
       <Pillars />
       <Program />
+      <ServicesBand />
       <Leadership />
       <Footer />
     </main>
