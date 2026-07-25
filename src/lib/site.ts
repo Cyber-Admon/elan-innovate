@@ -11,7 +11,7 @@ export const site = {
   email: "innovateelan@gmail.com",
   phone: "+234 803 370 8533",
   phoneRaw: "+2348033708533",
-  community: "", // paste the WhatsApp community invite link here when you have it
+  community: "https://chat.whatsapp.com/CmWudOBiMe0K81TUXoOODs?mode=gi_t", // paste the WhatsApp community invite link here when you have it
   social: {
     instagram: "https://www.instagram.com/elan.innovate/",
     linkedin: "https://www.linkedin.com/company/elaninnovate/",
