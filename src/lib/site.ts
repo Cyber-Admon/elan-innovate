@@ -30,21 +30,25 @@ export const leadership = [
   {
     name: "Abdulmalik Adebayo Omoniyi",
     role: "President and CEO",
+    photo: "/team/admon.png",
     bio: "Brand strategist and builder. Started Elan to make real support reachable for entrepreneurs building from nothing.",
   },
   {
     name: "Mujisatullahi Adedunke Bakare",
-    role: "Vice President, Director of Operations",
-    bio: "Business strategist and operator. Runs timelines and delivery across the firm and co-hosts the programs.",
+    role: "Director of Operations",
+    photo: "/team/mujisatullahi.png",
+    bio: "Brand strategist and operator. Runs timelines and delivery across the firm and co-hosts the programs.",
   },
   {
     name: "Khadijah Ajayi",
     role: "Vice President, Director of Campus Network",
-    bio: "Leads the campus network, taking Elan's programs to student entrepreneurs who are doing more than study.",
+    photo: "/team/khadijah.png",
+    bio: "Leads the campus network, taking Elan's programs to entrepreneurs where they study.",
   },
   {
     name: "Fouad Kamildeen-Aransi",
     role: "Vice President and General Secretary",
+    photo: "/team/fouad.png",
     bio: "Keeps the institution solid. Governance, documentation, and the books.",
   },
 ] as const;

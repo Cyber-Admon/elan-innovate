@@ -21,8 +21,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={montserrat.variable}>
-      <body>{children}</body>
+    <html
+      lang="en"
+      className={montserrat.variable}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

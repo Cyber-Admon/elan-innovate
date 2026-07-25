@@ -34,6 +34,8 @@ const labelStyles =
 
 export default function Apply() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [team, setTeam] = useState<TeamMember[]>([]);
 
   function addMember() {
@@ -56,12 +58,13 @@ export default function Apply() {
     );
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
     const data = new FormData(event.currentTarget);
 
-    // The whole application as one object, ready to POST to a backend
-    // that stores it and triggers the confirmation email.
     const application = {
       track: "incubator",
       fullName: data.get("fullName") as string,
@@ -85,12 +88,26 @@ export default function Apply() {
       submittedAt: new Date().toISOString(),
     };
 
-    // TODO: replace with the real backend call, e.g.
-    // await fetch("/api/apply", { method: "POST", body: JSON.stringify(application) })
-    console.log("Application submitted:", application);
+    try {
+      const response = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(application),
+      });
 
-    setSubmitted(true);
-    window.scrollTo(0, 0);
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      setSubmitted(true);
+      window.scrollTo(0, 0);
+    } catch {
+      setError(
+        "Something went wrong sending your application. Check your connection and try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -104,12 +121,12 @@ export default function Apply() {
             Application received
           </p>
           <h1 className="mb-6 max-w-4xl text-4xl font-black uppercase leading-[0.95] tracking-tight sm:text-6xl md:text-7xl">
-            You're in <span className="text-strike">the pipeline.</span>
+            You&apos;re in <span className="text-strike">the pipeline.</span>
           </h1>
           <p className="max-w-xl text-base font-medium leading-relaxed md:text-lg">
-            We've received your application. A confirmation email is on its way
-            to your inbox, so keep an eye out (check spam too, just in case).
-            We'll be in touch about next steps.
+            We&apos;ve received your application. A confirmation email is on its
+            way to your inbox, so keep an eye out (check spam too, just in
+            case). We&apos;ll be in touch about next steps.
           </p>
         </section>
       ) : (
@@ -123,9 +140,9 @@ export default function Apply() {
               Apply to <span className="text-strike">the Incubator.</span>
             </h1>
             <p className="max-w-xl text-base font-medium leading-relaxed md:text-lg">
-              It's free, it takes a few minutes, and your idea doesn't need to
-              be perfect. Tell us where you are honestly and we take it from
-              there. The program runs Q4 2026.
+              It&apos;s free, it takes a few minutes, and your idea doesn&apos;t
+              need to be perfect. Tell us where you are honestly and we take it
+              from there. The program runs Q4 2026.
             </p>
           </section>
 
@@ -310,16 +327,13 @@ export default function Apply() {
               <fieldset>
                 <legend className={labelStyles}>Your team (optional)</legend>
                 <p className="mb-4 text-sm font-medium opacity-70">
-                  Building alone? Skip this, that's fine. If you have people
-                  building with you, add each of them.
+                  Building alone? Skip this, that&apos;s fine. If you have
+                  people building with you, add each of them.
                 </p>
 
                 <div className="flex flex-col gap-4">
                   {team.map((member, index) => (
-                    <div
-                      key={index}
-                      className="border-4 border-ink p-4 md:p-5"
-                    >
+                    <div key={index} className="border-4 border-ink p-4 md:p-5">
                       <div className="mb-4 flex items-center justify-between">
                         <p className="text-xs font-bold uppercase tracking-widest text-strike">
                           Team member {String(index + 1).padStart(2, "0")}
@@ -414,7 +428,9 @@ export default function Apply() {
                                   className="h-5 w-5 accent-[#ff6a00]"
                                 />
                                 <span className="text-sm font-bold uppercase tracking-wide">
-                                  {option === "yes" ? "Student" : "Not a student"}
+                                  {option === "yes"
+                                    ? "Student"
+                                    : "Not a student"}
                                 </span>
                               </label>
                             ))}
@@ -468,11 +484,18 @@ export default function Apply() {
                 />
               </div>
 
+              {error && (
+                <p className="border-4 border-strike p-4 text-sm font-bold uppercase tracking-wide text-strike">
+                  {error}
+                </p>
+              )}
+
               <button
                 type="submit"
-                className="bg-strike px-8 py-4 text-base font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink"
+                disabled={submitting}
+                className="bg-strike px-8 py-4 text-base font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Submit application
+                {submitting ? "Submitting..." : "Submit application"}
               </button>
               <p className="text-sm font-medium opacity-70">
                 Questions before you apply? Reach us at {site.email}.
