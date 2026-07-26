@@ -1,7 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { site } from "@/lib/site";
+import EnquiryModal from "@/components/EnquiryModal";
 
 export default function WhoItsFor() {
+  const [modalOpen, setModalOpen] = useState(false);
+
   return (
     <section className="px-4 py-16 md:px-8 md:py-24">
       <p className="mb-4 inline-block border-2 border-ink px-3 py-1 text-xs font-bold uppercase tracking-widest md:text-sm">
@@ -14,13 +19,7 @@ export default function WhoItsFor() {
       <div className="grid gap-6 md:grid-cols-2 md:gap-8">
         {/* Entry point 1: idea stage */}
         <div className="flex flex-col border-4 border-ink p-6 md:p-10">
-          <svg
-            viewBox="0 0 32 32"
-            fill="none"
-            strokeWidth="2.5"
-            aria-hidden="true"
-            className="mb-6 h-9 w-9 stroke-ink"
-          >
+          <svg viewBox="0 0 32 32" fill="none" strokeWidth="2.5" aria-hidden="true" className="mb-6 h-9 w-9 stroke-ink">
             <circle cx="16" cy="12" r="7" />
             <line x1="16" y1="19" x2="16" y2="28" />
             <line x1="11" y1="24" x2="21" y2="24" />
@@ -39,23 +38,14 @@ export default function WhoItsFor() {
           <p className="mb-8 text-sm font-bold uppercase tracking-wide">
             Your path <span className="text-strike">&rarr;</span> Incubation
           </p>
-          <Link
-            href="/apply"
-            className="mt-auto self-start bg-strike px-6 py-3 text-sm font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink"
-          >
+          <Link href="/apply" className="mt-auto self-start bg-strike px-6 py-3 text-sm font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink">
             Apply to the Incubator
           </Link>
         </div>
 
         {/* Entry point 2: existing business */}
         <div className="flex flex-col border-4 border-ink bg-navy p-6 text-paper md:p-10">
-          <svg
-            viewBox="0 0 32 32"
-            fill="none"
-            strokeWidth="2.5"
-            aria-hidden="true"
-            className="mb-6 h-9 w-9 stroke-paper"
-          >
+          <svg viewBox="0 0 32 32" fill="none" strokeWidth="2.5" aria-hidden="true" className="mb-6 h-9 w-9 stroke-paper">
             <polyline points="4,26 4,18 10,18 10,26" />
             <polyline points="13,26 13,10 19,10 19,26" />
             <polyline points="22,26 22,14 28,14 28,26" />
@@ -79,14 +69,13 @@ export default function WhoItsFor() {
             Accelerator applications open later. Agency services are available
             now.
           </p>
-          
-          <a href={`mailto:${site.email}`}
-            className="mt-auto self-start border-4 border-paper px-6 py-3 text-sm font-bold uppercase tracking-wide transition-colors hover:bg-paper hover:text-navy"
-          >
+          <button type="button" onClick={() => setModalOpen(true)} className="mt-auto self-start border-4 border-paper px-6 py-3 text-sm font-bold uppercase tracking-wide transition-colors hover:bg-paper hover:text-navy">
             Talk to us
-          </a>
+          </button>
         </div>
       </div>
+
+      <EnquiryModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </section>
   );
 }
