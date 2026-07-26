@@ -31,7 +31,7 @@ export default function EnquiryModal({
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  function buildWhatsApp() {
+  function buildWhatsAppUrl() {
     const lines = [
       "Hello Elan Innovate, I'd like to talk about working with you.",
       "",
@@ -40,6 +40,31 @@ export default function EnquiryModal({
       form.details ? `Details: ${form.details}` : "",
     ].filter(Boolean);
     return `${whatsappLink}?text=${encodeURIComponent(lines.join("\n"))}`;
+  }
+
+  // Fire-and-forget save so a WhatsApp enquiry still lands in Supabase + email.
+  function logEnquiry(via: string) {
+    return fetch("/api/enquiry", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...form,
+        service: via,
+        submittedAt: new Date().toISOString(),
+      }),
+    }).catch(() => {
+      // WhatsApp already opened; a failed log is non-fatal.
+    });
+  }
+
+  async function handleWhatsApp() {
+    // Open the tab synchronously so the browser doesn't block the popup,
+    // then log to the backend in the background.
+    const win = window.open(buildWhatsAppUrl(), "_blank", "noopener,noreferrer");
+    logEnquiry("General enquiry (via WhatsApp)");
+    if (!win) {
+      window.location.href = buildWhatsAppUrl();
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -104,9 +129,9 @@ export default function EnquiryModal({
                 Thanks for reaching out. We&apos;ve got your message and will get
                 back to you shortly.
               </p>
-              <a href={buildWhatsApp()} target="_blank" rel="noopener noreferrer" className="inline-block bg-strike px-6 py-3 text-sm font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink">
+              <button type="button" onClick={handleWhatsApp} className="inline-block bg-strike px-6 py-3 text-sm font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink">
                 Continue on WhatsApp &rarr;
-              </a>
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -142,9 +167,9 @@ export default function EnquiryModal({
                   {submitting ? "Sending..." : "Send enquiry"}
                 </button>
                 <div className="grid grid-cols-2 gap-3">
-                  <a href={buildWhatsApp()} target="_blank" rel="noopener noreferrer" className="border-4 border-ink px-4 py-3 text-center text-sm font-bold uppercase tracking-wide transition-colors hover:bg-ink hover:text-paper">
+                  <button type="button" onClick={handleWhatsApp} className="border-4 border-ink px-4 py-3 text-center text-sm font-bold uppercase tracking-wide transition-colors hover:bg-ink hover:text-paper">
                     WhatsApp
-                  </a>
+                  </button>
                   <a href={`tel:${site.phoneRaw}`} className="border-4 border-ink px-4 py-3 text-center text-sm font-bold uppercase tracking-wide transition-colors hover:bg-ink hover:text-paper">
                     Call us
                   </a>

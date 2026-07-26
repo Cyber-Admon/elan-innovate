@@ -33,7 +33,7 @@ export default function EnquiryForm() {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  function buildWhatsAppMessage() {
+  function buildWhatsAppUrl() {
     const lines = [
       "Hello Elan Innovate, I'd like to enquire about your services.",
       "",
@@ -42,12 +42,34 @@ export default function EnquiryForm() {
       form.service ? `Service needed: ${form.service}` : "",
       form.details ? `Details: ${form.details}` : "",
     ].filter(Boolean);
-    return encodeURIComponent(lines.join("\n"));
+    return `https://wa.me/${site.phoneRaw.replace("+", "")}?text=${encodeURIComponent(
+      lines.join("\n")
+    )}`;
+  }
+
+  // Fire-and-forget save so a WhatsApp enquiry still lands in Supabase + email.
+  function logEnquiry() {
+    return fetch("/api/enquiry", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...form,
+        service: form.service
+          ? `${form.service} (via WhatsApp)`
+          : "Services enquiry (via WhatsApp)",
+        submittedAt: new Date().toISOString(),
+      }),
+    }).catch(() => {
+      // chat already opened; a failed log is non-fatal.
+    });
   }
 
   function sendWhatsApp() {
-    const url = `https://wa.me/${site.phoneRaw.replace("+", "")}?text=${buildWhatsAppMessage()}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    // Open the chat synchronously to avoid popup blocking, then log.
+    const url = buildWhatsAppUrl();
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    logEnquiry();
+    if (!win) window.location.href = url;
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
