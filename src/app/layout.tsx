@@ -10,9 +10,23 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://elan.crelivio.com"),
   title: "Elan Innovate | Building with Momentum",
   description:
-    "Elan Innovate is a venture-building institution turning ideas into scalable ventures and helping businesses scale. Applications for our first incubation cohort are open now.",
+    "A venture-building institution. We help entrepreneurs turn ideas into scalable ventures, and help existing businesses grow, through agency services, incubation, and acceleration.",
+  openGraph: {
+    title: "Elan Innovate | Building with Momentum",
+    description:
+      "We build businesses for scale, with momentum. Applications for our first incubation cohort are open now.",
+    type: "website",
+    siteName: "Elan Innovate",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Elan Innovate | Building with Momentum",
+    description:
+      "We build businesses for scale, with momentum. Applications open now.",
+  },
 };
 
 export default function RootLayout({
@@ -25,9 +39,8 @@ export default function RootLayout({
       lang="en"
       className={montserrat.variable}
       data-scroll-behavior="smooth"
-      suppressHydrationWarning
     >
-      <body suppressHydrationWarning>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
