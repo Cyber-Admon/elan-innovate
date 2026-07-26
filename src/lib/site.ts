@@ -30,7 +30,7 @@ export const leadership = [
   {
     name: "Abdulmalik Adebayo Omoniyi",
     role: "President and CEO",
-    photo: "/team/admon.png",
+    photo: "/team/admoni.png",
     bio: "Brand strategist and builder. Started Elan to make real support reachable for entrepreneurs building from nothing.",
   },
   {
