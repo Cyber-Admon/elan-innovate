@@ -35,6 +35,7 @@ const contactOptions = [
   },
 ];
 
+
 export default function About() {
   return (
     <main>
