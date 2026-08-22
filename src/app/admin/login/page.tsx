@@ -1,26 +1,54 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLogin() {
+  const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function update(field: keyof typeof form, value: string) {
+    setForm((f) => ({ ...f, [field]: value }));
+  }
 
   async function signInWithGoogle() {
-    setLoading(true);
+    setGoogleLoading(true);
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/admin/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/admin/callback` },
     });
-    // Browser redirects to Google; no code runs after this.
+  }
+
+  async function signInWithEmail(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+    setLoading(false);
+
+    if (signInError) {
+      // Most common: wrong credentials, or email not yet confirmed.
+      setError(
+        signInError.message.toLowerCase().includes("confirm")
+          ? "Please confirm your email first. Check your inbox for the link."
+          : "Wrong email or password."
+      );
+      return;
+    }
+    // Signed in. Send them to the dashboard; the gate decides what they see.
+    window.location.href = "/admin";
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ink px-4 text-paper">
-      {/* Grid backdrop */}
+    <main className="flex min-h-screen items-center justify-center bg-ink px-4 py-10 text-paper">
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0"
@@ -41,18 +69,62 @@ export default function AdminLogin() {
         <p className="mb-3 inline-block bg-strike px-3 py-1 text-xs font-bold uppercase tracking-widest text-paper">
           Admin access
         </p>
-        <h1 className="mb-4 text-3xl font-black uppercase leading-none tracking-tight md:text-4xl">
+        <h1 className="mb-6 text-3xl font-black uppercase leading-none tracking-tight md:text-4xl">
           Control room.
         </h1>
-        <p className="mb-8 text-sm font-medium leading-relaxed text-paper/70">
-          Sign in with your Google account. New requests are reviewed before
-          access is granted.
-        </p>
 
+        {/* Email + password */}
+        <form onSubmit={signInWithEmail} className="flex flex-col gap-4">
+          <input
+            required
+            type="email"
+            value={form.email}
+            onChange={(e) => update("email", e.target.value)}
+            placeholder="Email"
+            className="w-full border-4 border-paper bg-ink px-4 py-3 text-base font-medium text-paper placeholder:text-paper/40"
+          />
+          <input
+            required
+            type="password"
+            value={form.password}
+            onChange={(e) => update("password", e.target.value)}
+            placeholder="Password"
+            className="w-full border-4 border-paper bg-ink px-4 py-3 text-base font-medium text-paper placeholder:text-paper/40"
+          />
+
+          {error && (
+            <p className="border-2 border-strike p-3 text-xs font-bold uppercase tracking-wide text-strike">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-strike px-6 py-4 text-sm font-bold uppercase tracking-wide text-paper transition-colors hover:bg-paper hover:text-ink disabled:opacity-60"
+          >
+            {loading ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+
+        <div className="mt-2 text-right">
+          <Link href="/admin/reset" className="text-xs font-bold uppercase tracking-widest text-paper/50 hover:text-strike">
+            Forgot password?
+          </Link>
+        </div>
+
+        {/* Divider */}
+        <div className="my-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-paper/20" />
+          <span className="text-xs font-bold uppercase tracking-widest text-paper/40">or</span>
+          <div className="h-px flex-1 bg-paper/20" />
+        </div>
+
+        {/* Google */}
         <button
           type="button"
           onClick={signInWithGoogle}
-          disabled={loading}
+          disabled={googleLoading}
           className="flex w-full items-center justify-center gap-3 border-4 border-paper bg-paper px-6 py-4 text-sm font-bold uppercase tracking-wide text-ink transition-colors hover:bg-strike hover:text-paper disabled:opacity-60"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
@@ -61,8 +133,15 @@ export default function AdminLogin() {
             <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z" />
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" />
           </svg>
-          {loading ? "Redirecting..." : "Continue with Google"}
+          {googleLoading ? "Redirecting..." : "Continue with Google"}
         </button>
+
+        <p className="mt-6 text-sm font-medium text-paper/60">
+          Need access?{" "}
+          <Link href="/admin/register" className="font-bold text-strike hover:underline">
+            Request it
+          </Link>
+        </p>
       </div>
     </main>
   );
