@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import AdminApplicationControls from "@/components/AdminApplicationControls";
 
 export const dynamic = "force-dynamic";
 
@@ -169,6 +170,11 @@ export default async function AdminDashboard() {
                       </div>
                     )}
                   </div>
+                  <AdminApplicationControls
+                    id={a.id}
+                    initialStatus={a.status}
+                    initialNotes={a.notes}
+                  />
                 </div>
               ))}
             </div>
