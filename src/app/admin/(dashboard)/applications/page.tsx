@@ -13,7 +13,8 @@ function fmtDate(iso: string) {
 const FILTERS = [
   { value: "all", label: "All" },
   { value: "new", label: "New" },
-  { value: "reviewing", label: "Reviewing" },
+  { value: "internal_review", label: "Internal Review" },
+  { value: "external_review", label: "External Review" },
   { value: "accepted", label: "Accepted" },
   { value: "rejected", label: "Rejected" },
 ];
@@ -70,7 +71,7 @@ export default async function ApplicationsPage({
 
       {applications.length === 0 ? (
         <p className="border-4 border-ink p-6 text-sm font-bold uppercase tracking-wide text-ink/50">
-          No applications{filter !== "all" ? ` marked "${filter}"` : ""} yet.
+          No applications{filter !== "all" ? " in this stage" : ""} yet.
         </p>
       ) : (
         <div className="flex flex-col gap-6">
