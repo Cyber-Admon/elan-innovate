@@ -11,8 +11,33 @@ const VALID_STATUS = [
   "rejected",
 ];
 
-// Which statuses trigger an applicant email, and the copy for each.
-function emailForStatus(status: string, firstName: string) {
+type Interview = { date: string; time: string; place: string };
+
+function prettyDateTime(date: string, time: string) {
+  // date is YYYY-MM-DD, time is HH:MM (24h). Build a readable line.
+  try {
+    const dt = new Date(`${date}T${time}`);
+    const d = dt.toLocaleDateString("en-GB", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    const t = dt.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${d} at ${t}`;
+  } catch {
+    return `${date} at ${time}`;
+  }
+}
+
+function emailForStatus(
+  status: string,
+  firstName: string,
+  interview?: Interview
+) {
   switch (status) {
     case "accepted":
       return {
@@ -44,20 +69,43 @@ function emailForStatus(status: string, firstName: string) {
           "Elan Innovate",
         ].join("\n"),
       };
-    case "external_review":
+    case "external_review": {
+      const when =
+        interview && interview.date && interview.time
+          ? prettyDateTime(interview.date, interview.time)
+          : null;
+      const lines = [
+        `Hi ${firstName},`,
+        "",
+        "Good news. Your application has advanced to the interview stage, where you'll present and defend your idea to our team.",
+        "",
+      ];
+      if (when) {
+        lines.push(`Your interview is scheduled for: ${when}.`);
+        if (interview?.place) {
+          lines.push(`Location / link: ${interview.place}.`);
+        }
+        lines.push("");
+        lines.push(
+          "Please reply to confirm you can make it. If the time doesn't work, let us know and we'll find another slot."
+        );
+      } else {
+        lines.push(
+          "We'll reach out shortly to schedule a time that works for you."
+        );
+      }
+      lines.push("");
+      lines.push(
+        "Come ready to talk through your idea, the problem you're solving, and where you want to take it."
+      );
+      lines.push("");
+      lines.push("Talk soon,");
+      lines.push("Elan Innovate");
       return {
-        subject: "Next step: interview invite — Elan Innovate",
-        body: [
-          `Hi ${firstName},`,
-          "",
-          "Good news. Your application has advanced to the interview stage, where you'll have the chance to present and defend your idea to our team.",
-          "",
-          "We'll reach out shortly to schedule a time that works for you. Come ready to talk through your idea, the problem you're solving, and where you want to take it.",
-          "",
-          "Talk soon,",
-          "Elan Innovate",
-        ].join("\n"),
+        subject: "Your interview is scheduled — Elan Innovate",
+        body: lines.join("\n"),
       };
+    }
     default:
       return null;
   }
@@ -83,7 +131,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { id, status, notes } = body;
+  const { id, status, notes, interview } = body;
 
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -109,15 +157,11 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Apply the update.
   const { error } = await admin.from("applications").update(update).eq("id", id);
   if (error) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 
-  // If the status change warrants an applicant email, send it.
-  // accepted/rejected always email. external_review only emails when the
-  // caller explicitly confirmed (body.sendEmail === true).
   let emailed = false;
   if (typeof status === "string") {
     const shouldEmail =
@@ -126,7 +170,6 @@ export async function POST(request: Request) {
       (status === "external_review" && body.sendEmail === true);
 
     if (shouldEmail && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-      // Fetch the applicant's email + name.
       const { data: app } = await admin
         .from("applications")
         .select("full_name, email")
@@ -135,7 +178,7 @@ export async function POST(request: Request) {
 
       if (app?.email) {
         const firstName = (app.full_name ?? "there").trim().split(" ")[0];
-        const mail = emailForStatus(status, firstName);
+        const mail = emailForStatus(status, firstName, interview as Interview);
         if (mail) {
           try {
             const transporter = nodemailer.createTransport({
@@ -154,7 +197,6 @@ export async function POST(request: Request) {
             emailed = true;
           } catch (e) {
             console.error("Status email failed:", e);
-            // The status change already saved; email failure is non-fatal.
           }
         }
       }

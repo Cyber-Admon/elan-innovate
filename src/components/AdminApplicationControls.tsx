@@ -36,7 +36,16 @@ export default function AdminApplicationControls({
   const [flash, setFlash] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
-  async function applyStatus(next: string, sendEmail: boolean) {
+  // Interview schedule for the external-review invite.
+  const [intDate, setIntDate] = useState("");
+  const [intTime, setIntTime] = useState("");
+  const [intPlace, setIntPlace] = useState("");
+
+  async function applyStatus(
+    next: string,
+    sendEmail: boolean,
+    interview?: { date: string; time: string; place: string }
+  ) {
     const prev = status;
     setStatus(next);
     setBusy(true);
@@ -45,7 +54,7 @@ export default function AdminApplicationControls({
       const res = await fetch("/api/admin/application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: next, sendEmail }),
+        body: JSON.stringify({ id, status: next, sendEmail, interview }),
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
@@ -71,6 +80,18 @@ export default function AdminApplicationControls({
     applyStatus(next, false);
   }
 
+  function sendInterview() {
+    setConfirming(false);
+    applyStatus("external_review", true, {
+      date: intDate,
+      time: intTime,
+      place: intPlace,
+    });
+    setIntDate("");
+    setIntTime("");
+    setIntPlace("");
+  }
+
   async function saveNotes() {
     setNoteState("saving");
     try {
@@ -89,6 +110,7 @@ export default function AdminApplicationControls({
   }
 
   const noteDirty = notes !== savedNotes;
+  const canSend = intDate !== "" && intTime !== "";
 
   return (
     <div className="border-t-4 border-ink bg-paper p-5">
@@ -136,26 +158,63 @@ export default function AdminApplicationControls({
         is silent.
       </p>
 
-      {/* External review confirm prompt */}
+      {/* External review confirm prompt with interview schedule */}
       {confirming && (
         <div className="mb-5 border-4 border-ink bg-navy p-4 text-paper">
           <p className="mb-3 text-sm font-bold uppercase tracking-wide">
-            Send interview invite email?
+            Schedule the interview
           </p>
           <p className="mb-4 text-sm font-medium leading-relaxed text-paper/80">
-            Moving this applicant to external review can email them an invite to
-            interview and defend their project. Send the email now?
+            Set the interview date and time. When you send, the applicant gets an
+            invite to defend their project at this slot.
           </p>
+
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-paper/60">
+                Date
+              </label>
+              <input
+                type="date"
+                value={intDate}
+                onChange={(e) => setIntDate(e.target.value)}
+                className="w-full border-4 border-paper bg-navy px-3 py-2 text-sm font-medium text-paper"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-paper/60">
+                Time
+              </label>
+              <input
+                type="time"
+                value={intTime}
+                onChange={(e) => setIntTime(e.target.value)}
+                className="w-full border-4 border-paper bg-navy px-3 py-2 text-sm font-medium text-paper"
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-paper/60">
+              Location / link (optional)
+            </label>
+            <input
+              type="text"
+              value={intPlace}
+              onChange={(e) => setIntPlace(e.target.value)}
+              placeholder="e.g. Google Meet link, or office address"
+              className="w-full border-4 border-paper bg-navy px-3 py-2 text-sm font-medium text-paper placeholder:text-paper/40"
+            />
+          </div>
+
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => {
-                setConfirming(false);
-                applyStatus("external_review", true);
-              }}
-              className="bg-strike px-4 py-2 text-xs font-bold uppercase tracking-widest text-paper hover:bg-paper hover:text-ink"
+              disabled={!canSend}
+              onClick={sendInterview}
+              className="bg-strike px-4 py-2 text-xs font-bold uppercase tracking-widest text-paper hover:bg-paper hover:text-ink disabled:opacity-40"
             >
-              Set + send email
+              Set + send invite
             </button>
             <button
               type="button"
@@ -175,6 +234,11 @@ export default function AdminApplicationControls({
               Cancel
             </button>
           </div>
+          {!canSend && (
+            <p className="mt-2 text-xs font-medium text-paper/50">
+              Date and time are required to send the invite.
+            </p>
+          )}
         </div>
       )}
 
