@@ -73,7 +73,6 @@ export default function ApplicationsBrowser({
     );
   }, [filtered.length]);
 
-  // Keyboard: left/right to move, escape to close.
   useEffect(() => {
     if (openIndex === null) return;
     function onKey(e: KeyboardEvent) {
@@ -85,7 +84,6 @@ export default function ApplicationsBrowser({
     return () => window.removeEventListener("keydown", onKey);
   }, [openIndex, goPrev, goNext, close]);
 
-  // Touch swipe.
   const [touchStart, setTouchStart] = useState<number | null>(null);
   function onTouchStart(e: React.TouchEvent) {
     setTouchStart(e.touches[0].clientX);
@@ -253,10 +251,13 @@ export default function ApplicationsBrowser({
               )}
             </div>
 
-            {/* Controls: keyed by id so state resets when you swipe to another */}
+            {/* Controls */}
             <AdminApplicationControls
               key={open.id}
               id={open.id}
+              applicantName={open.full_name}
+              applicantEmail={open.email}
+              ideaName={open.idea_name}
               initialStatus={open.status}
               initialNotes={open.notes}
             />

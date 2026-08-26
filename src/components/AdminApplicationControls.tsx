@@ -17,15 +17,20 @@ const statusColor: Record<string, string> = {
   rejected: "border-2 border-ink text-ink",
 };
 
-// Only external_review opens the interview-scheduling prompt. Nothing else.
 const ASK_EMAIL = ["external_review"];
 
 export default function AdminApplicationControls({
   id,
+  applicantName,
+  applicantEmail,
+  ideaName,
   initialStatus,
   initialNotes,
 }: {
   id: string;
+  applicantName?: string;
+  applicantEmail?: string;
+  ideaName?: string;
   initialStatus: string;
   initialNotes: string | null;
 }) {
@@ -36,6 +41,7 @@ export default function AdminApplicationControls({
   const [noteState, setNoteState] = useState<"idle" | "saving" | "saved">("idle");
   const [flash, setFlash] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const [intDate, setIntDate] = useState("");
   const [intTime, setIntTime] = useState("");
@@ -73,8 +79,6 @@ export default function AdminApplicationControls({
 
   function handleStatusClick(next: string) {
     if (busy) return;
-    // External review always opens the prompt, even if it's already the
-    // current status, so you can reschedule or resend the invite.
     if (ASK_EMAIL.includes(next)) {
       setConfirming(true);
       return;
@@ -93,6 +97,33 @@ export default function AdminApplicationControls({
     setIntDate("");
     setIntTime("");
     setIntPlace("");
+  }
+
+  async function generateMeetLink() {
+    if (!intDate || !intTime) return;
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/admin/generate-meet-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applicantName,
+          applicantEmail,
+          ideaName,
+          date: intDate,
+          time: intTime,
+        }),
+      });
+      const data = await res.json();
+      if (data.meetLink) {
+        setIntPlace(data.meetLink);
+      } else {
+        setFlash("Couldn't generate a link. Is Calendar connected?");
+        setTimeout(() => setFlash(null), 3000);
+      }
+    } finally {
+      setGenerating(false);
+    }
   }
 
   async function saveNotes() {
@@ -130,7 +161,10 @@ export default function AdminApplicationControls({
       </div>
       <div className="mb-2 flex flex-wrap gap-2">
         {STATUSES.map((s) => {
-          const active = status === s.value;
+          // Treat External Review as "active-looking" while the confirm
+          // form is open, even though the real status hasn't saved yet.
+          const active =
+            status === s.value || (confirming && s.value === "external_review");
           const isPeri = s.value === "external_review";
           return (
             <button
@@ -158,22 +192,16 @@ export default function AdminApplicationControls({
       </div>
       <p className="mb-5 text-xs font-medium text-ink/40">
         Accepted and rejected email the applicant automatically. Internal review
-        is silent. Click External Review any time to schedule or reschedule the
-        interview.
+        is silent. Click External Review any time to schedule or reschedule.
       </p>
 
-      {/* External review confirm prompt with interview schedule.
-          This block ONLY renders when `confirming` is true, which ONLY
-          gets set by clicking the External Review button above. */}
       {confirming && (
         <div className="mb-5 border-4 border-ink bg-navy p-4 text-paper">
           <p className="mb-3 text-sm font-bold uppercase tracking-wide">
             Schedule the interview
           </p>
           <p className="mb-4 text-sm font-medium leading-relaxed text-paper/80">
-            Set the interview date and time. When you send, the applicant gets an
-            invite to defend their project at this slot, with a Google Meet link
-            if a calendar is connected.
+            Set the date and time, then generate a Meet link or paste your own.
           </p>
 
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
@@ -203,15 +231,31 @@ export default function AdminApplicationControls({
 
           <div className="mb-4">
             <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-paper/60">
-              Location / link (optional, used only if calendar isn&apos;t connected)
+              Meet link / location
             </label>
-            <input
-              type="text"
-              value={intPlace}
-              onChange={(e) => setIntPlace(e.target.value)}
-              placeholder="e.g. office address"
-              className="w-full border-4 border-paper bg-navy px-3 py-2 text-sm font-medium text-paper placeholder:text-paper/40"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={intPlace}
+                onChange={(e) => setIntPlace(e.target.value)}
+                placeholder="Paste a link, or generate one"
+                className="w-full border-4 border-paper bg-navy px-3 py-2 text-sm font-medium text-paper placeholder:text-paper/40"
+              />
+              <button
+                type="button"
+                onClick={generateMeetLink}
+                disabled={!canSend || generating}
+                className="shrink-0 border-4 border-paper px-4 text-sm font-bold uppercase tracking-widest transition-colors hover:bg-paper hover:text-navy disabled:opacity-40"
+                title="Generate a Google Meet link"
+              >
+                {generating ? "..." : "+"}
+              </button>
+            </div>
+            {!canSend && (
+              <p className="mt-1 text-xs font-medium text-paper/40">
+                Set date and time first to generate a link.
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2">
