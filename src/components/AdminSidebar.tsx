@@ -24,7 +24,11 @@ export default function AdminSidebar({
 
   const allLinks =
     role === "superadmin"
-      ? [...links, { label: "Admins", href: "/admin/admins" }]
+      ? [
+          ...links,
+          { label: "Admins", href: "/admin/admins" },
+          { label: "Settings", href: "/admin/settings" },
+        ]
       : links;
 
   async function signOut() {
@@ -46,7 +50,12 @@ export default function AdminSidebar({
           onClick={() => setOpen((v) => !v)}
           className="flex h-9 w-9 items-center justify-center border-2 border-paper"
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5 stroke-paper" strokeWidth="2.5" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-5 w-5 stroke-paper"
+            strokeWidth="2.5"
+            aria-hidden="true"
+          >
             {open ? (
               <>
                 <line x1="5" y1="5" x2="19" y2="19" />
