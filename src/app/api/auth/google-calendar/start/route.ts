@@ -25,13 +25,16 @@ export async function GET(request: Request) {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CALENDAR_CLIENT_ID,
     process.env.GOOGLE_CALENDAR_CLIENT_SECRET,
-    `${origin}/api/auth/google-calendar/callback`
+    `${origin}/api/auth/google-calendar/callback`,
   );
 
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent", // forces a refresh token every time, useful while testing
-    scope: ["https://www.googleapis.com/auth/calendar.events"],
+    scope: [
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ],
     state: user.id, // so the callback knows which admin is connecting
   });
 
