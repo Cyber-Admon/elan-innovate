@@ -89,3 +89,54 @@ export async function createInterviewEvent({
     return null;
   }
 }
+
+export type CalendarEvent = {
+  id: string;
+  summary: string;
+  start: string | null;
+  end: string | null;
+  meetLink: string | null;
+  attendeeEmail: string | null;
+};
+
+// Lists upcoming events on the connected calendar (created by Elan or otherwise).
+export async function listUpcomingEvents(maxResults = 20): Promise<CalendarEvent[]> {
+  const calendar = await getCalendarClient();
+  if (!calendar) return [];
+
+  try {
+    const res = await calendar.events.list({
+      calendarId: "primary",
+      timeMin: new Date().toISOString(),
+      maxResults,
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    return (res.data.items ?? []).map((e) => ({
+      id: e.id ?? "",
+      summary: e.summary ?? "(No title)",
+      start: e.start?.dateTime ?? e.start?.date ?? null,
+      end: e.end?.dateTime ?? e.end?.date ?? null,
+      meetLink: e.hangoutLink ?? null,
+      attendeeEmail: e.attendees?.[0]?.email ?? null,
+    }));
+  } catch (e) {
+    console.error("Listing calendar events failed:", e);
+    return [];
+  }
+}
+
+// Cancels (deletes) an event by id.
+export async function cancelEvent(eventId: string): Promise<boolean> {
+  const calendar = await getCalendarClient();
+  if (!calendar) return false;
+
+  try {
+    await calendar.events.delete({ calendarId: "primary", eventId });
+    return true;
+  } catch (e) {
+    console.error("Cancelling calendar event failed:", e);
+    return false;
+  }
+}

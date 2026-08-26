@@ -1,14 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const links = [
   { label: "Dashboard", href: "/admin" },
   { label: "Applications", href: "/admin/applications" },
   { label: "Enquiries", href: "/admin/enquiries" },
+  { label: "Appointments", href: "/admin/appointments" },
   { label: "Metrics", href: "/admin/metrics" },
 ];
 
@@ -50,12 +51,7 @@ export default function AdminSidebar({
           onClick={() => setOpen((v) => !v)}
           className="flex h-9 w-9 items-center justify-center border-2 border-paper"
         >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-5 w-5 stroke-paper"
-            strokeWidth="2.5"
-            aria-hidden="true"
-          >
+          <svg viewBox="0 0 24 24" className="h-5 w-5 stroke-paper" strokeWidth="2.5" aria-hidden="true">
             {open ? (
               <>
                 <line x1="5" y1="5" x2="19" y2="19" />
