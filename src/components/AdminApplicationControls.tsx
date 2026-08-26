@@ -17,6 +17,7 @@ const statusColor: Record<string, string> = {
   rejected: "border-2 border-ink text-ink",
 };
 
+// Only external_review opens the interview-scheduling prompt. Nothing else.
 const ASK_EMAIL = ["external_review"];
 
 export default function AdminApplicationControls({
@@ -36,7 +37,6 @@ export default function AdminApplicationControls({
   const [flash, setFlash] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
-  // Interview schedule for the external-review invite.
   const [intDate, setIntDate] = useState("");
   const [intTime, setIntTime] = useState("");
   const [intPlace, setIntPlace] = useState("");
@@ -72,11 +72,14 @@ export default function AdminApplicationControls({
   }
 
   function handleStatusClick(next: string) {
-    if (next === status || busy) return;
+    if (busy) return;
+    // External review always opens the prompt, even if it's already the
+    // current status, so you can reschedule or resend the invite.
     if (ASK_EMAIL.includes(next)) {
       setConfirming(true);
       return;
     }
+    if (next === status) return;
     applyStatus(next, false);
   }
 
@@ -155,10 +158,13 @@ export default function AdminApplicationControls({
       </div>
       <p className="mb-5 text-xs font-medium text-ink/40">
         Accepted and rejected email the applicant automatically. Internal review
-        is silent.
+        is silent. Click External Review any time to schedule or reschedule the
+        interview.
       </p>
 
-      {/* External review confirm prompt with interview schedule */}
+      {/* External review confirm prompt with interview schedule.
+          This block ONLY renders when `confirming` is true, which ONLY
+          gets set by clicking the External Review button above. */}
       {confirming && (
         <div className="mb-5 border-4 border-ink bg-navy p-4 text-paper">
           <p className="mb-3 text-sm font-bold uppercase tracking-wide">
@@ -166,7 +172,8 @@ export default function AdminApplicationControls({
           </p>
           <p className="mb-4 text-sm font-medium leading-relaxed text-paper/80">
             Set the interview date and time. When you send, the applicant gets an
-            invite to defend their project at this slot.
+            invite to defend their project at this slot, with a Google Meet link
+            if a calendar is connected.
           </p>
 
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
@@ -196,13 +203,13 @@ export default function AdminApplicationControls({
 
           <div className="mb-4">
             <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-paper/60">
-              Location / link (optional)
+              Location / link (optional, used only if calendar isn&apos;t connected)
             </label>
             <input
               type="text"
               value={intPlace}
               onChange={(e) => setIntPlace(e.target.value)}
-              placeholder="e.g. Google Meet link, or office address"
+              placeholder="e.g. office address"
               className="w-full border-4 border-paper bg-navy px-3 py-2 text-sm font-medium text-paper placeholder:text-paper/40"
             />
           </div>
