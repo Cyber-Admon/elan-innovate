@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import ConnectCalendar from "@/components/ConnectCalendar";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +36,11 @@ export default async function AdminsPage() {
       <h1 className="mb-8 text-3xl font-black uppercase leading-none tracking-tight md:text-4xl">
         Admins
       </h1>
+
+      {/* Google Calendar connection, superadmin only */}
+      <Suspense fallback={null}>
+        <ConnectCalendar />
+      </Suspense>
 
       {/* Pending */}
       <section className="mb-10">

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { createInterviewEvent } from "@/lib/google-calendar";
 
 const VALID_STATUS = [
   "new",
@@ -14,7 +15,6 @@ const VALID_STATUS = [
 type Interview = { date: string; time: string; place: string };
 
 function prettyDateTime(date: string, time: string) {
-  // date is YYYY-MM-DD, time is HH:MM (24h). Build a readable line.
   try {
     const dt = new Date(`${date}T${time}`);
     const d = dt.toLocaleDateString("en-GB", {
@@ -36,7 +36,8 @@ function prettyDateTime(date: string, time: string) {
 function emailForStatus(
   status: string,
   firstName: string,
-  interview?: Interview
+  interview?: Interview,
+  meetLink?: string | null
 ) {
   switch (status) {
     case "accepted":
@@ -82,7 +83,9 @@ function emailForStatus(
       ];
       if (when) {
         lines.push(`Your interview is scheduled for: ${when}.`);
-        if (interview?.place) {
+        if (meetLink) {
+          lines.push(`Join here: ${meetLink}`);
+        } else if (interview?.place) {
           lines.push(`Location / link: ${interview.place}.`);
         }
         lines.push("");
@@ -163,6 +166,8 @@ export async function POST(request: Request) {
   }
 
   let emailed = false;
+  let calendarCreated = false;
+
   if (typeof status === "string") {
     const shouldEmail =
       status === "accepted" ||
@@ -172,13 +177,33 @@ export async function POST(request: Request) {
     if (shouldEmail && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       const { data: app } = await admin
         .from("applications")
-        .select("full_name, email")
+        .select("full_name, email, idea_name")
         .eq("id", id)
         .maybeSingle();
 
       if (app?.email) {
         const firstName = (app.full_name ?? "there").trim().split(" ")[0];
-        const mail = emailForStatus(status, firstName, interview as Interview);
+        const typedInterview = interview as Interview | undefined;
+
+        // If this is an interview invite with a date and time, try to create
+        // a real Calendar event with a Meet link first.
+        let meetLink: string | null = null;
+        if (
+          status === "external_review" &&
+          typedInterview?.date &&
+          typedInterview?.time
+        ) {
+          meetLink = await createInterviewEvent({
+            applicantName: app.full_name ?? "Applicant",
+            applicantEmail: app.email,
+            ideaName: app.idea_name ?? "their idea",
+            date: typedInterview.date,
+            time: typedInterview.time,
+          });
+          if (meetLink) calendarCreated = true;
+        }
+
+        const mail = emailForStatus(status, firstName, typedInterview, meetLink);
         if (mail) {
           try {
             const transporter = nodemailer.createTransport({
@@ -203,5 +228,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, emailed });
+  return NextResponse.json({ ok: true, emailed, calendarCreated });
 }
