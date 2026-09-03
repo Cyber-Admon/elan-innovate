@@ -37,7 +37,8 @@ function emailForStatus(
   status: string,
   firstName: string,
   interview?: Interview,
-  meetLink?: string | null
+  meetLink?: string | null,
+  registrationLink?: string | null
 ) {
   switch (status) {
     case "accepted":
@@ -48,7 +49,11 @@ function emailForStatus(
           "",
           "Congratulations. After reviewing your application, we'd like to welcome you into the Elan Innovate Incubator.",
           "",
-          "We'll follow up shortly with the next steps, your onboarding details, and how to join the community. We're glad to be building with you.",
+          registrationLink
+            ? `Create your fellow account here: ${registrationLink}`
+            : "We'll follow up shortly with your registration link and onboarding details.",
+          "",
+          "We're glad to be building with you.",
           "",
           "Building with Momentum,",
           "Elan Innovate",
@@ -166,7 +171,6 @@ export async function POST(request: Request) {
   }
 
   let emailed = false;
-  let calendarCreated = false;
 
   if (typeof status === "string") {
     const shouldEmail =
@@ -185,8 +189,6 @@ export async function POST(request: Request) {
         const firstName = (app.full_name ?? "there").trim().split(" ")[0];
         const typedInterview = interview as Interview | undefined;
 
-        // If this is an interview invite with a date and time, try to create
-        // a real Calendar event with a Meet link first.
         let meetLink: string | null = null;
         if (
           status === "external_review" &&
@@ -200,10 +202,35 @@ export async function POST(request: Request) {
             date: typedInterview.date,
             time: typedInterview.time,
           });
-          if (meetLink) calendarCreated = true;
         }
 
-        const mail = emailForStatus(status, firstName, typedInterview, meetLink);
+        // On acceptance, generate a one-time fellow registration invite.
+        let registrationLink: string | null = null;
+        if (status === "accepted") {
+          const { data: invite, error: inviteError } = await admin
+            .from("fellow_invites")
+            .insert({
+              application_id: id,
+              full_name: app.full_name ?? "",
+              email: app.email,
+            })
+            .select("token")
+            .single();
+
+          if (!inviteError && invite?.token) {
+            registrationLink = `https://elan.crelivio.com/portal/register/${invite.token}`;
+          } else if (inviteError) {
+            console.error("Fellow invite creation failed:", inviteError);
+          }
+        }
+
+        const mail = emailForStatus(
+          status,
+          firstName,
+          typedInterview,
+          meetLink,
+          registrationLink
+        );
         if (mail) {
           try {
             const transporter = nodemailer.createTransport({
@@ -228,5 +255,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, emailed, calendarCreated });
+  return NextResponse.json({ ok: true, emailed });
 }
