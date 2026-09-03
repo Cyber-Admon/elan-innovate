@@ -33,7 +33,7 @@ type CohortSettings = {
 };
 
 function isActuallyOpen(s: CohortSettings | null): boolean {
-  if (!s) return true; // fail open if settings fail to load, so applying is never silently blocked
+  if (!s) return true;
   if (!s.is_open) return false;
   const now = new Date();
   if (s.opens_at && now < new Date(s.opens_at)) return false;
@@ -84,37 +84,16 @@ function InterestForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
         <label htmlFor="int-name" className={labelStyles}>Full name *</label>
-        <input
-          id="int-name"
-          required
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          placeholder="Your full name"
-          className={inputStyles}
-        />
+        <input id="int-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" className={inputStyles} />
       </div>
       <div>
         <label htmlFor="int-email" className={labelStyles}>Email *</label>
-        <input
-          id="int-email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          className={inputStyles}
-        />
+        <input id="int-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={inputStyles} />
       </div>
       {error && (
-        <p className="border-4 border-strike p-3 text-sm font-bold uppercase tracking-wide text-strike">
-          {error}
-        </p>
+        <p className="border-4 border-strike p-3 text-sm font-bold uppercase tracking-wide text-strike">{error}</p>
       )}
-      <button
-        type="submit"
-        disabled={submitting}
-        className="self-start bg-strike px-6 py-3 text-sm font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink disabled:opacity-60"
-      >
+      <button type="submit" disabled={submitting} className="self-start bg-strike px-6 py-3 text-sm font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink disabled:opacity-60">
         {submitting ? "Submitting..." : "Notify me"}
       </button>
     </form>
@@ -129,6 +108,7 @@ export default function Apply() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/cohort-settings?track=incubator")
@@ -154,6 +134,7 @@ export default function Apply() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!agreed) return;
     setSubmitting(true);
     setError(null);
 
@@ -206,9 +187,7 @@ export default function Apply() {
 
       {checkingSettings ? (
         <section className="px-4 py-20 md:px-8 md:py-32">
-          <p className="text-sm font-bold uppercase tracking-widest text-ink/40">
-            Loading...
-          </p>
+          <p className="text-sm font-bold uppercase tracking-widest text-ink/40">Loading...</p>
         </section>
       ) : submitted ? (
         <section className="px-4 py-20 md:px-8 md:py-32">
@@ -225,7 +204,6 @@ export default function Apply() {
           </p>
         </section>
       ) : !open ? (
-        /* Closed state */
         <section className="px-4 py-20 md:px-8 md:py-32">
           <p className="mb-4 inline-block border-2 border-ink px-3 py-1 text-xs font-bold uppercase tracking-widest md:text-sm">
             Applications closed
@@ -244,7 +222,6 @@ export default function Apply() {
         </section>
       ) : (
         <>
-          {/* Header */}
           <section className="border-b-4 border-ink px-4 py-14 md:px-8 md:py-20">
             <p className="mb-4 inline-block bg-ink px-3 py-1 text-xs font-bold uppercase tracking-widest text-paper md:text-sm">
               The application
@@ -260,7 +237,6 @@ export default function Apply() {
             </p>
           </section>
 
-          {/* Form */}
           <section className="px-4 py-12 md:px-8 md:py-16">
             <form onSubmit={handleSubmit} className="mx-auto flex max-w-2xl flex-col gap-8">
               <fieldset>
@@ -399,13 +375,35 @@ export default function Apply() {
                 <textarea id="why" name="why" required rows={3} placeholder="Short and honest beats long and polished" className={inputStyles} />
               </div>
 
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  required
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  className="mt-1 h-5 w-5 accent-[#ff6a00]"
+                />
+                <span className="text-sm font-medium text-ink/80">
+                  I agree to the{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-strike hover:underline">
+                    Privacy Policy
+                  </a>{" "}
+                  and{" "}
+                  <a href="/program-terms" target="_blank" rel="noopener noreferrer" className="font-bold text-strike hover:underline">
+                    Program Terms
+                  </a>. *
+                </span>
+              </label>
+
               {error && (
-                <p className="border-4 border-strike p-4 text-sm font-bold uppercase tracking-wide text-strike">
-                  {error}
-                </p>
+                <p className="border-4 border-strike p-4 text-sm font-bold uppercase tracking-wide text-strike">{error}</p>
               )}
 
-              <button type="submit" disabled={submitting} className="bg-strike px-8 py-4 text-base font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60">
+              <button
+                type="submit"
+                disabled={submitting || !agreed}
+                className="bg-strike px-8 py-4 text-base font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 {submitting ? "Submitting..." : "Submit application"}
               </button>
               <p className="text-sm font-medium opacity-70">

@@ -24,6 +24,13 @@ const socialIcons: { name: string; url: string; path: string }[] = [
   },
 ];
 
+const legalLinks = [
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Use", href: "/terms" },
+  { label: "Program Terms", href: "/program-terms" },
+  { label: "Cookies", href: "/cookies" },
+];
+
 export default function Footer() {
   return (
     <footer className="border-t-4 border-ink bg-ink text-paper">
@@ -52,14 +59,14 @@ export default function Footer() {
           <p className="mb-3 text-xs font-bold uppercase tracking-widest text-strike">
             Contact
           </p>
-          <a
-            href={`mailto:${site.email}`}
+          
+          <a  href={`mailto:${site.email}`}
             className="block text-sm font-medium leading-loose hover:text-strike"
           >
             {site.email}
           </a>
-          <a
-            href={`tel:${site.phoneRaw}`}
+          
+          <a  href={`tel:${site.phoneRaw}`}
             className="block text-sm font-medium leading-loose hover:text-strike"
           >
             {site.phone}
@@ -106,6 +113,15 @@ export default function Footer() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Legal links */}
+      <div className="flex flex-wrap gap-x-6 gap-y-2 border-t-4 border-paper px-4 py-5 text-xs font-bold uppercase tracking-widest text-paper/60 md:px-8">
+        {legalLinks.map((link) => (
+          <Link key={link.href} href={link.href} className="hover:text-paper">
+            {link.label}
+          </Link>
+        ))}
       </div>
 
       {/* Bottom bar */}
