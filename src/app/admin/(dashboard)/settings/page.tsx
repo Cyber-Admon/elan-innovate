@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { Suspense } from "react";
 import ConnectCalendar from "@/components/ConnectCalendar";
+import CohortSettings from "@/components/CohortSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function SettingsPage() {
         Settings
       </h1>
 
+      <CohortSettings />
       <Suspense fallback={null}>
         <ConnectCalendar />
       </Suspense>
