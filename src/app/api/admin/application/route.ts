@@ -13,6 +13,7 @@ const VALID_STATUS = [
 ];
 
 type Interview = { date: string; time: string; place: string };
+type TeamMember = { name: string; email: string };
 
 function prettyDateTime(date: string, time: string) {
   try {
@@ -204,23 +205,78 @@ export async function POST(request: Request) {
           });
         }
 
-        // On acceptance, generate a one-time fellow registration invite.
+        // On acceptance, generate a one-time invite for the lead AND every
+        // team member, and email each of them their own registration link.
         let registrationLink: string | null = null;
         if (status === "accepted") {
-          const { data: invite, error: inviteError } = await admin
-            .from("fellow_invites")
-            .insert({
-              application_id: id,
-              full_name: app.full_name ?? "",
-              email: app.email,
-            })
-            .select("token")
-            .single();
+          const { data: fullApp } = await admin
+            .from("applications")
+            .select("full_name, email, team")
+            .eq("id", id)
+            .maybeSingle();
 
-          if (!inviteError && invite?.token) {
-            registrationLink = `https://elan.crelivio.com/portal/register/${invite.token}`;
-          } else if (inviteError) {
-            console.error("Fellow invite creation failed:", inviteError);
+          const leadEmail = fullApp?.email ?? app.email;
+          const recipients: TeamMember[] = [
+            { name: fullApp?.full_name ?? "", email: leadEmail },
+            ...(((fullApp?.team as TeamMember[] | null) ?? []).map((m) => ({
+              name: m.name,
+              email: m.email,
+            }))),
+          ];
+
+          for (const person of recipients) {
+            if (!person.email) continue;
+
+            const { data: invite, error: inviteError } = await admin
+              .from("fellow_invites")
+              .insert({
+                application_id: id,
+                full_name: person.name,
+                email: person.email,
+              })
+              .select("token")
+              .single();
+
+            if (inviteError || !invite?.token) {
+              console.error("Fellow invite creation failed:", inviteError);
+              continue;
+            }
+
+            const link = `https://elan.crelivio.com/portal/register/${invite.token}`;
+
+            if (person.email === leadEmail) {
+              registrationLink = link;
+            } else {
+              try {
+                const transporter = nodemailer.createTransport({
+                  service: "gmail",
+                  auth: {
+                    user: process.env.GMAIL_USER,
+                    pass: process.env.GMAIL_APP_PASSWORD,
+                  },
+                });
+                const teamFirstName = person.name.trim().split(" ")[0] || "there";
+                await transporter.sendMail({
+                  from: `"Elan Innovate" <${process.env.GMAIL_USER}>`,
+                  to: person.email,
+                  subject: "You're in — Elan Innovate Incubator",
+                  text: [
+                    `Hi ${teamFirstName},`,
+                    "",
+                    `Great news — the team behind "${fullApp?.full_name ?? "your team"}"'s application has been accepted into the Elan Innovate Incubator.`,
+                    "",
+                    `Create your fellow account here: ${link}`,
+                    "",
+                    "We're glad to be building with you.",
+                    "",
+                    "Building with Momentum,",
+                    "Elan Innovate",
+                  ].join("\n"),
+                });
+              } catch (e) {
+                console.error("Team member invite email failed:", e);
+              }
+            }
           }
         }
 
