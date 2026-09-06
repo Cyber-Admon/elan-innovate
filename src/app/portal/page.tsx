@@ -140,7 +140,7 @@ export default async function PortalDashboard({
               days.
             </p>
             
-              href="/portal/profile"
+            <a  href="/portal/profile"
               className="inline-block border-2 border-paper bg-paper px-5 py-3 text-xs font-bold uppercase tracking-widest text-strike transition-colors hover:bg-ink hover:text-paper"
             >
               Complete now
@@ -150,7 +150,7 @@ export default async function PortalDashboard({
 
         <div className="grid gap-4 sm:grid-cols-2">
           
-            href="/portal/profile"
+          <a  href="/portal/profile"
             className="border-4 border-ink p-6 transition-colors hover:bg-ink hover:text-paper"
           >
             <p className="text-lg font-black uppercase leading-tight">Your Profile</p>
