@@ -17,7 +17,6 @@ export default function RegisterForm({
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
 
   async function signInWithGoogle() {
     setGoogleLoading(true);
@@ -49,47 +48,38 @@ export default function RegisterForm({
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/portal/confirm?invite=${token}`,
-      },
+      options: { data: { full_name: fullName } },
     });
 
-    setLoading(false);
-
     if (signUpError) {
+      setLoading(false);
       setError(signUpError.message);
       return;
     }
 
-    if (data.session) {
-      // Confirmation not required: we have a live session immediately.
-      window.location.href = `/portal?invite=${token}`;
-    } else {
-      // Confirmation required: they'll click the emailed link, which
-      // routes straight into /portal via /portal/confirm.
-      setDone(true);
-    }
-  }
+    if (!data.session) {
+      // No session means Supabase wants confirmation. Force-confirm it
+      // server-side, then sign in directly, so the fellow never waits on email.
+      await fetch("/api/portal/force-confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-  if (done) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-ink px-4 text-paper">
-        <div className="max-w-md border-4 border-paper p-8 text-center md:p-10">
-          <p className="mb-3 inline-block bg-strike px-3 py-1 text-xs font-bold uppercase tracking-widest">
-            Check your email
-          </p>
-          <h1 className="mb-4 text-2xl font-black uppercase leading-tight">
-            One more step.
-          </h1>
-          <p className="text-sm font-medium leading-relaxed text-paper/70">
-            We&apos;ve sent a confirmation link to {email}. Click it and
-            you&apos;ll land straight in your fellow dashboard, no separate
-            sign-in needed.
-          </p>
-        </div>
-      </main>
-    );
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setLoading(false);
+        setError("Account created, but sign-in failed. Try logging in manually.");
+        return;
+      }
+    }
+
+    setLoading(false);
+    window.location.href = `/portal?invite=${token}`;
   }
 
   return (
