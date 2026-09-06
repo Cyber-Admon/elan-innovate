@@ -49,7 +49,10 @@ export default function RegisterForm({
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/portal/confirm?invite=${token}`,
+      },
     });
 
     setLoading(false);
@@ -63,7 +66,8 @@ export default function RegisterForm({
       // Confirmation not required: we have a live session immediately.
       window.location.href = `/portal?invite=${token}`;
     } else {
-      // Confirmation required: no session yet until they click the email link.
+      // Confirmation required: they'll click the emailed link, which
+      // routes straight into /portal via /portal/confirm.
       setDone(true);
     }
   }
@@ -76,11 +80,12 @@ export default function RegisterForm({
             Check your email
           </p>
           <h1 className="mb-4 text-2xl font-black uppercase leading-tight">
-            Confirm your address.
+            One more step.
           </h1>
           <p className="text-sm font-medium leading-relaxed text-paper/70">
-            We&apos;ve sent a verification link to {email}. Click it, then sign
-            in to finish setting up your fellow account.
+            We&apos;ve sent a confirmation link to {email}. Click it and
+            you&apos;ll land straight in your fellow dashboard, no separate
+            sign-in needed.
           </p>
         </div>
       </main>
