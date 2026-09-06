@@ -12,7 +12,13 @@ function isProfileComplete(fellow: {
   return !!(fellow.bio && fellow.phone && fellow.photo_url);
 }
 
-export default async function PortalDashboard() {
+export default async function PortalDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ invite?: string }>;
+}) {
+  const { invite: inviteToken } = await searchParams;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -24,11 +30,73 @@ export default async function PortalDashboard() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const { data: fellow } = await admin
+  let fellow: {
+    id: string;
+    application_id: string | null;
+    full_name: string | null;
+    email: string;
+    phone: string | null;
+    bio: string | null;
+    photo_url: string | null;
+    status: string;
+  } | null = null;
+
+  const { data: existingFellow } = await admin
     .from("fellows")
     .select("*")
     .eq("id", user.id)
     .maybeSingle();
+
+  fellow = existingFellow;
+
+  // No fellow row yet, but we have a real session: create it now,
+  // using the invite token if one was passed (from registration).
+  if (!fellow) {
+    let inviteData: {
+      application_id: string;
+      full_name: string;
+      email: string;
+      used: boolean;
+    } | null = null;
+
+    if (inviteToken) {
+      const { data } = await admin
+        .from("fellow_invites")
+        .select("*")
+        .eq("token", inviteToken)
+        .maybeSingle();
+      inviteData = data;
+    }
+
+    const { data: created, error: createError } = await admin
+      .from("fellows")
+      .insert({
+        id: user.id,
+        application_id: inviteData?.application_id ?? null,
+        full_name:
+          inviteData?.full_name ??
+          (user.user_metadata?.full_name as string | undefined) ??
+          "",
+        email: user.email ?? inviteData?.email ?? "",
+        status: "active",
+      })
+      .select("*")
+      .single();
+
+    if (createError) {
+      console.error("Fellow row creation (portal fallback) failed:", createError);
+      redirect("/portal/login");
+    }
+
+    if (inviteToken && inviteData && !inviteData.used) {
+      await admin
+        .from("fellow_invites")
+        .update({ used: true })
+        .eq("token", inviteToken);
+    }
+
+    fellow = created;
+  }
 
   if (!fellow) redirect("/portal/login");
 
@@ -72,7 +140,7 @@ export default async function PortalDashboard() {
               days.
             </p>
             
-            <a  href="/portal/profile"
+              href="/portal/profile"
               className="inline-block border-2 border-paper bg-paper px-5 py-3 text-xs font-bold uppercase tracking-widest text-strike transition-colors hover:bg-ink hover:text-paper"
             >
               Complete now
@@ -81,13 +149,18 @@ export default async function PortalDashboard() {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <a href="/portal/profile" className="border-4 border-ink p-6 transition-colors hover:bg-ink hover:text-paper">
+          
+            href="/portal/profile"
+            className="border-4 border-ink p-6 transition-colors hover:bg-ink hover:text-paper"
+          >
             <p className="text-lg font-black uppercase leading-tight">Your Profile</p>
             <p className="mt-1 text-sm font-medium opacity-70">Update your info</p>
           </a>
           <div className="border-4 border-ink bg-navy p-6 text-paper">
             <p className="text-lg font-black uppercase leading-tight">Community</p>
-            <p className="mt-1 text-sm font-medium text-paper/70">WhatsApp link coming here</p>
+            <p className="mt-1 text-sm font-medium text-paper/70">
+              WhatsApp link coming here
+            </p>
           </div>
         </div>
       </div>

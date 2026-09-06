@@ -17,6 +17,7 @@ export default function RegisterForm({
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
   async function signInWithGoogle() {
     setGoogleLoading(true);
@@ -51,26 +52,39 @@ export default function RegisterForm({
       options: { data: { full_name: fullName } },
     });
 
-    if (signUpError || !data.user) {
-      setLoading(false);
-      setError(signUpError?.message ?? "Something went wrong. Try again.");
-      return;
-    }
-
-    const res = await fetch("/api/portal/complete-registration", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, userId: data.user.id, fullName, email }),
-    });
-
     setLoading(false);
 
-    if (!res.ok) {
-      setError("Account created, but something went wrong finishing setup. Contact us.");
+    if (signUpError) {
+      setError(signUpError.message);
       return;
     }
 
-    window.location.href = "/portal";
+    if (data.session) {
+      // Confirmation not required: we have a live session immediately.
+      window.location.href = `/portal?invite=${token}`;
+    } else {
+      // Confirmation required: no session yet until they click the email link.
+      setDone(true);
+    }
+  }
+
+  if (done) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-ink px-4 text-paper">
+        <div className="max-w-md border-4 border-paper p-8 text-center md:p-10">
+          <p className="mb-3 inline-block bg-strike px-3 py-1 text-xs font-bold uppercase tracking-widest">
+            Check your email
+          </p>
+          <h1 className="mb-4 text-2xl font-black uppercase leading-tight">
+            Confirm your address.
+          </h1>
+          <p className="text-sm font-medium leading-relaxed text-paper/70">
+            We&apos;ve sent a verification link to {email}. Click it, then sign
+            in to finish setting up your fellow account.
+          </p>
+        </div>
+      </main>
+    );
   }
 
   return (
