@@ -48,7 +48,10 @@ export default function RegisterForm({
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/portal/confirm?invite=${token}`,
+      },
     });
 
     if (signUpError) {
@@ -60,6 +63,9 @@ export default function RegisterForm({
     if (!data.session) {
       // No session means Supabase wants confirmation. Force-confirm it
       // server-side, then sign in directly, so the fellow never waits on email.
+      // If this ever fails for some reason, the emailRedirectTo above is the
+      // fallback: an actual confirmation email link will still land correctly
+      // in the portal instead of the bare homepage.
       await fetch("/api/portal/force-confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
