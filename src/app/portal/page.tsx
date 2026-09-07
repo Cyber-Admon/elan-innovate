@@ -1,13 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { site } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-function isProfileComplete(fellow: {
-  bio: string | null;
-  phone: string | null;
-}) {
+function isProfileComplete(fellow: { bio: string | null; phone: string | null }) {
   return !!(fellow.bio && fellow.phone);
 }
 
@@ -152,12 +150,17 @@ export default async function PortalDashboard({
             <p className="text-lg font-black uppercase leading-tight">Your Profile</p>
             <p className="mt-1 text-sm font-medium opacity-70">Update your info</p>
           </a>
-          <div className="border-4 border-ink bg-navy p-6 text-paper">
+          
+          <a  href={site.fellowCommunity}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-4 border-ink bg-navy p-6 text-paper transition-colors hover:bg-ink"
+          >
             <p className="text-lg font-black uppercase leading-tight">Community</p>
             <p className="mt-1 text-sm font-medium text-paper/70">
-              WhatsApp link coming here
+              Join the fellow WhatsApp group
             </p>
-          </div>
+          </a>
         </div>
       </div>
     </main>

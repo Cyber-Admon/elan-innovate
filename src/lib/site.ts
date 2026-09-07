@@ -11,7 +11,8 @@ export const site = {
   email: "innovateelan@gmail.com",
   phone: "+234 803 370 8533",
   phoneRaw: "+2348033708533",
-  community: "https://chat.whatsapp.com/CmWudOBiMe0K81TUXoOODs?mode=gi_t", // paste the WhatsApp community invite link here when you have it
+  community: "https://chat.whatsapp.com/CmWudOBiMe0K81TUXoOODs?mode=gi_t",
+  fellowCommunity: "https://chat.whatsapp.com/Idh118tGH677BxkOkEvb9a?s=cl&p=a&mlu=4&ilr=4",
   social: {
     instagram: "https://www.instagram.com/elan.innovate/",
     linkedin: "https://www.linkedin.com/company/elaninnovate/",
@@ -32,12 +33,6 @@ export const leadership = [
     role: "President and CEO",
     photo: "/team/admoni.png",
     bio: "Brand strategist and builder. Started Elan to make real support reachable for entrepreneurs building from nothing.",
-  },
-  {
-    name: "Mujisatullahi Adedunke Bakare",
-    role: "Director of Operations",
-    photo: "/team/mujisatullahi.jpeg",
-    bio: "Brand strategist and operator. Runs timelines and delivery across the firm and co-hosts the programs.",
   },
   {
     name: "Khadijah Ajayi",
