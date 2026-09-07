@@ -51,7 +51,6 @@ export default async function ProfilePage() {
           fullName={fellow.full_name ?? ""}
           phone={fellow.phone ?? ""}
           bio={fellow.bio ?? ""}
-          photoUrl={fellow.photo_url ?? ""}
           ideaName={fellow.idea_name ?? ""}
           ideaOneLiner={fellow.idea_one_liner ?? ""}
           ideaProblem={fellow.idea_problem ?? ""}

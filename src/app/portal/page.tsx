@@ -7,9 +7,8 @@ export const dynamic = "force-dynamic";
 function isProfileComplete(fellow: {
   bio: string | null;
   phone: string | null;
-  photo_url: string | null;
 }) {
-  return !!(fellow.bio && fellow.phone && fellow.photo_url);
+  return !!(fellow.bio && fellow.phone);
 }
 
 export default async function PortalDashboard({
@@ -49,8 +48,6 @@ export default async function PortalDashboard({
 
   fellow = existingFellow;
 
-  // No fellow row yet, but we have a real session: create it now,
-  // using the invite token if one was passed (from registration).
   if (!fellow) {
     let inviteData: {
       application_id: string;
@@ -135,12 +132,11 @@ export default async function PortalDashboard({
               Complete your profile
             </p>
             <p className="mb-4 text-sm font-medium leading-relaxed">
-              Add your phone number, a short bio, and a photo to finish setting
-              up your fellow profile. Incomplete profiles are removed after 7
-              days.
+              Add your phone number and a short bio to finish setting up your
+              fellow profile. Incomplete profiles are removed after 7 days.
             </p>
             
-            <a  href="/portal/profile"
+              href="/portal/profile"
               className="inline-block border-2 border-paper bg-paper px-5 py-3 text-xs font-bold uppercase tracking-widest text-strike transition-colors hover:bg-ink hover:text-paper"
             >
               Complete now
@@ -150,7 +146,7 @@ export default async function PortalDashboard({
 
         <div className="grid gap-4 sm:grid-cols-2">
           
-          <a  href="/portal/profile"
+            href="/portal/profile"
             className="border-4 border-ink p-6 transition-colors hover:bg-ink hover:text-paper"
           >
             <p className="text-lg font-black uppercase leading-tight">Your Profile</p>

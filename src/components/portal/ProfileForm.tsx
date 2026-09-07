@@ -27,7 +27,6 @@ export default function ProfileForm({
   fullName,
   phone,
   bio,
-  photoUrl,
   ideaName,
   ideaOneLiner,
   ideaProblem,
@@ -39,7 +38,6 @@ export default function ProfileForm({
   fullName: string;
   phone: string;
   bio: string;
-  photoUrl: string;
   ideaName: string;
   ideaOneLiner: string;
   ideaProblem: string;
@@ -51,7 +49,6 @@ export default function ProfileForm({
   const [form, setForm] = useState({
     phone,
     bio,
-    photoUrl,
     ideaName,
     ideaOneLiner,
     ideaProblem,
@@ -131,17 +128,6 @@ export default function ProfileForm({
               value={form.bio}
               onChange={(e) => update("bio", e.target.value)}
               placeholder="A couple of sentences about you."
-              className={inputStyles}
-            />
-          </div>
-          <div>
-            <label htmlFor="photoUrl" className={labelStyles}>Photo URL *</label>
-            <input
-              id="photoUrl"
-              required
-              value={form.photoUrl}
-              onChange={(e) => update("photoUrl", e.target.value)}
-              placeholder="Link to a photo of you"
               className={inputStyles}
             />
           </div>
