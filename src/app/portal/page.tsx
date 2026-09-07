@@ -146,7 +146,7 @@ export default async function PortalDashboard({
 
         <div className="grid gap-4 sm:grid-cols-2">
           
-            href="/portal/profile"
+          <a  href="/portal/profile"
             className="border-4 border-ink p-6 transition-colors hover:bg-ink hover:text-paper"
           >
             <p className="text-lg font-black uppercase leading-tight">Your Profile</p>
