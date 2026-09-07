@@ -13,7 +13,6 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Find the user by email.
   const { data: userList, error: listError } = await admin.auth.admin.listUsers();
   if (listError) {
     return NextResponse.json({ error: "Could not look up user" }, { status: 500 });
@@ -24,7 +23,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Force confirm.
   const { error: confirmError } = await admin.auth.admin.updateUserById(user.id, {
     email_confirm: true,
   });
