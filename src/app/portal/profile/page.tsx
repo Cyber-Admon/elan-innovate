@@ -41,6 +41,23 @@ export default async function ProfilePage() {
   return (
     <main className="min-h-screen bg-paper px-4 py-10 md:px-8">
       <div className="mx-auto max-w-2xl">
+        
+        <a  href="/portal"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-ink/60 hover:text-ink"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-4 w-4 stroke-current"
+            strokeWidth="2.5"
+            fill="none"
+            aria-hidden="true"
+          >
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12,19 5,12 12,5" />
+          </svg>
+          Back to dashboard
+        </a>
+
         <p className="mb-2 inline-block border-2 border-ink px-3 py-1 text-xs font-bold uppercase tracking-widest">
           Fellow Portal
         </p>
