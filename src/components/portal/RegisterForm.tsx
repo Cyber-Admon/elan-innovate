@@ -43,48 +43,34 @@ export default function RegisterForm({
     }
 
     setLoading(true);
-    const supabase = createClient();
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/portal/confirm?invite=${token}`,
-      },
+    const createRes = await fetch("/api/portal/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, fullName }),
     });
 
-    if (signUpError) {
+    const createData = await createRes.json();
+
+    if (!createRes.ok) {
       setLoading(false);
-      setError(signUpError.message);
+      setError(createData.error ?? "Could not create account.");
       return;
     }
 
-    if (!data.session) {
-      // No session means Supabase wants confirmation. Force-confirm it
-      // server-side, then sign in directly, so the fellow never waits on email.
-      // If this ever fails for some reason, the emailRedirectTo above is the
-      // fallback: an actual confirmation email link will still land correctly
-      // in the portal instead of the bare homepage.
-      await fetch("/api/portal/force-confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (signInError) {
-        setLoading(false);
-        setError("Account created, but sign-in failed. Try logging in manually.");
-        return;
-      }
-    }
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     setLoading(false);
+
+    if (signInError) {
+      setError("Account created, but sign-in failed. Try logging in manually.");
+      return;
+    }
+
     window.location.href = `/portal?invite=${token}`;
   }
 
