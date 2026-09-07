@@ -136,7 +136,7 @@ export default async function PortalDashboard({
               fellow profile. Incomplete profiles are removed after 7 days.
             </p>
             
-              href="/portal/profile"
+            <a  href="/portal/profile"
               className="inline-block border-2 border-paper bg-paper px-5 py-3 text-xs font-bold uppercase tracking-widest text-strike transition-colors hover:bg-ink hover:text-paper"
             >
               Complete now
