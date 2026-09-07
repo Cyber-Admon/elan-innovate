@@ -30,6 +30,7 @@ export default async function PortalDashboard({
   let fellow: {
     id: string;
     application_id: string | null;
+    lead_fellow_id: string | null;
     full_name: string | null;
     email: string;
     phone: string | null;
@@ -48,10 +49,11 @@ export default async function PortalDashboard({
 
   if (!fellow) {
     let inviteData: {
-      application_id: string;
+      application_id: string | null;
       full_name: string;
       email: string;
       used: boolean;
+      lead_fellow_id: string | null;
     } | null = null;
 
     if (inviteToken) {
@@ -68,6 +70,7 @@ export default async function PortalDashboard({
       .insert({
         id: user.id,
         application_id: inviteData?.application_id ?? null,
+        lead_fellow_id: inviteData?.lead_fellow_id ?? null,
         full_name:
           inviteData?.full_name ??
           (user.user_metadata?.full_name as string | undefined) ??
@@ -114,6 +117,42 @@ export default async function PortalDashboard({
 
   const complete = isProfileComplete(fellow);
 
+  // If this fellow was invited by a lead, fetch pending edit requests they
+  // may have submitted (shown for the lead's own review below), and load
+  // the lead's shared idea info for display if this fellow IS a team member.
+  let pendingRequests: {
+    id: string;
+    proposed_idea_name: string | null;
+    proposed_idea_one_liner: string | null;
+    proposed_idea_problem: string | null;
+    proposed_vision_10yr: string | null;
+    proposed_mission_3_5yr: string | null;
+    proposed_goal_1yr: string | null;
+    created_at: string;
+    proposer_name: string | null;
+  }[] = [];
+
+  if (!fellow.lead_fellow_id) {
+    // This fellow IS a lead. Check for pending edit requests from their team.
+    const { data: requests } = await admin
+      .from("fellow_edit_requests")
+      .select("*, proposer:proposed_by(full_name)")
+      .eq("lead_fellow_id", fellow.id)
+      .eq("status", "pending");
+
+    pendingRequests = (requests ?? []).map((r) => ({
+      id: r.id,
+      proposed_idea_name: r.proposed_idea_name,
+      proposed_idea_one_liner: r.proposed_idea_one_liner,
+      proposed_idea_problem: r.proposed_idea_problem,
+      proposed_vision_10yr: r.proposed_vision_10yr,
+      proposed_mission_3_5yr: r.proposed_mission_3_5yr,
+      proposed_goal_1yr: r.proposed_goal_1yr,
+      created_at: r.created_at,
+      proposer_name: (r.proposer as { full_name: string } | null)?.full_name ?? "A team member",
+    }));
+  }
+
   return (
     <main className="min-h-screen bg-paper px-4 py-10 md:px-8">
       <div className="mx-auto max-w-3xl">
@@ -138,6 +177,23 @@ export default async function PortalDashboard({
               className="inline-block border-2 border-paper bg-paper px-5 py-3 text-xs font-bold uppercase tracking-widest text-strike transition-colors hover:bg-ink hover:text-paper"
             >
               Complete now
+            </a>
+          </div>
+        )}
+
+        {pendingRequests.length > 0 && (
+          <div className="mb-8 border-4 border-ink bg-navy p-5 text-paper">
+            <p className="mb-3 text-sm font-black uppercase tracking-widest">
+              Pending edit requests ({pendingRequests.length})
+            </p>
+            <p className="mb-4 text-sm font-medium leading-relaxed text-paper/80">
+              A team member has proposed changes to your shared idea info.
+            </p>
+            
+            <a  href="/portal/edit-requests"
+              className="inline-block bg-strike px-5 py-3 text-xs font-bold uppercase tracking-widest text-paper transition-colors hover:bg-paper hover:text-navy"
+            >
+              Review requests
             </a>
           </div>
         )}

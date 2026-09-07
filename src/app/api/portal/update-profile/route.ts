@@ -95,6 +95,7 @@ export async function POST(request: Request) {
           application_id: null,
           full_name: member.name,
           email: member.email,
+          lead_fellow_id: user.id,
         })
         .select("token")
         .single();
