@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { brandedEmail } from "@/lib/email-template";
 
 type TeamMemberInput = {
   name: string;
@@ -24,7 +25,6 @@ export async function POST(request: Request) {
   const {
     phone,
     bio,
-    photoUrl,
     ideaName,
     ideaOneLiner,
     ideaProblem,
@@ -39,13 +39,11 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Save the main profile fields.
   const { data: fellow, error: fellowError } = await admin
     .from("fellows")
     .update({
       phone,
       bio,
-      photo_url: photoUrl,
       idea_name: ideaName,
       idea_one_liner: ideaOneLiner,
       idea_problem: ideaProblem,
@@ -63,7 +61,6 @@ export async function POST(request: Request) {
 
   const teamId = fellow.team_id;
 
-  // Replace this fellow's team member rows with the submitted list.
   await admin.from("fellow_team_members").delete().eq("fellow_id", user.id);
 
   const members = (team as TeamMemberInput[]) ?? [];
@@ -86,7 +83,6 @@ export async function POST(request: Request) {
       .select("id")
       .single();
 
-    // Fire an invite email if they're marked for it and haven't gotten one.
     if (
       member.invitedToIncubator &&
       inserted?.id &&
@@ -130,6 +126,17 @@ export async function POST(request: Request) {
               "Building with Momentum,",
               "Elan Innovate",
             ].join("\n"),
+            html: brandedEmail({
+              preheader: "You've been invited to join the Elan Innovate Incubator",
+              heading: "You're invited.",
+              bodyHtml: `
+                <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+                <p style="margin:0 0 16px 0;">You've been added as a team member on an Elan Innovate Incubator fellow's profile, and they'd like you to join as a fellow too.</p>
+                <p style="margin:0 0 16px 0;">We're glad to be building with you.</p>
+              `,
+              ctaText: "Create Your Fellow Account",
+              ctaLink: link,
+            }),
           });
 
           await admin

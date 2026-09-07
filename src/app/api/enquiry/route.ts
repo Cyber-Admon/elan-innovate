@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { brandedEmail } from "@/lib/email-template";
 
 const REQUIRED_FIELDS = [
   "name",
@@ -26,7 +27,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // 1. Store the enquiry in Supabase
     const supabase = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -49,7 +49,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Email, only if Gmail credentials exist.
     if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       try {
         const transporter = nodemailer.createTransport({
@@ -98,6 +97,15 @@ export async function POST(request: Request) {
             "Elan Innovate",
             "Building with Momentum",
           ].join("\n"),
+          html: brandedEmail({
+            preheader: "We've received your enquiry",
+            heading: "We've got your enquiry.",
+            bodyHtml: `
+              <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+              <p style="margin:0 0 16px 0;">Thanks for reaching out about <strong>${enquiry.service}</strong>. We've received your enquiry and will come back to you shortly with a quote and next steps.</p>
+              <p style="margin:0 0 16px 0;">Need it faster? Just reply to this email or message us on WhatsApp.</p>
+            `,
+          }),
         });
       } catch (emailError) {
         console.error("Enquiry email failed:", emailError);

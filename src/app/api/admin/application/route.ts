@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { createInterviewEvent } from "@/lib/google-calendar";
+import { brandedEmail } from "@/lib/email-template";
 
 const VALID_STATUS = [
   "new",
@@ -45,7 +46,7 @@ function emailForStatus(
     case "accepted":
       return {
         subject: "You're in — Elan Innovate Incubator",
-        body: [
+        text: [
           `Hi ${firstName},`,
           "",
           "Congratulations. After reviewing your application, we'd like to welcome you into the Elan Innovate Incubator.",
@@ -59,11 +60,22 @@ function emailForStatus(
           "Building with Momentum,",
           "Elan Innovate",
         ].join("\n"),
+        html: brandedEmail({
+          preheader: "You've been accepted into the Elan Innovate Incubator",
+          heading: "You're in.",
+          bodyHtml: `
+            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Congratulations. After reviewing your application, we'd like to welcome you into the <strong>Elan Innovate Incubator</strong>.</p>
+            <p style="margin:0 0 16px 0;">We're glad to be building with you.</p>
+          `,
+          ctaText: registrationLink ? "Create Your Fellow Account" : undefined,
+          ctaLink: registrationLink ?? undefined,
+        }),
       };
     case "rejected":
       return {
         subject: "Update on your Elan Innovate application",
-        body: [
+        text: [
           `Hi ${firstName},`,
           "",
           "Thank you for applying to the Elan Innovate Incubator and for sharing your idea with us.",
@@ -75,44 +87,70 @@ function emailForStatus(
           "Wishing you the best,",
           "Elan Innovate",
         ].join("\n"),
+        html: brandedEmail({
+          preheader: "An update on your Elan Innovate application",
+          heading: "Application update.",
+          bodyHtml: `
+            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Thank you for applying to the Elan Innovate Incubator and for sharing your idea with us.</p>
+            <p style="margin:0 0 16px 0;">After careful review, we won't be moving forward with your application for this cohort. This isn't a judgment on your potential. We had limited spots and many strong applicants, and the decision was genuinely difficult.</p>
+            <p style="margin:0 0 16px 0;">We'd be glad to see you apply again for a future cohort, and you're welcome to join our community in the meantime.</p>
+          `,
+        }),
       };
     case "external_review": {
       const when =
         interview && interview.date && interview.time
           ? prettyDateTime(interview.date, interview.time)
           : null;
-      const lines = [
+      const textLines = [
         `Hi ${firstName},`,
         "",
         "Good news. Your application has advanced to the interview stage, where you'll present and defend your idea to our team.",
         "",
       ];
+      let htmlExtra = "";
       if (when) {
-        lines.push(`Your interview is scheduled for: ${when}.`);
+        textLines.push(`Your interview is scheduled for: ${when}.`);
+        htmlExtra += `<p style="margin:0 0 8px 0;"><strong>Scheduled for:</strong> ${when}</p>`;
         if (meetLink) {
-          lines.push(`Join here: ${meetLink}`);
+          textLines.push(`Join here: ${meetLink}`);
         } else if (interview?.place) {
-          lines.push(`Location / link: ${interview.place}.`);
+          textLines.push(`Location / link: ${interview.place}.`);
+          htmlExtra += `<p style="margin:0 0 16px 0;"><strong>Where:</strong> ${interview.place}</p>`;
         }
-        lines.push("");
-        lines.push(
+        textLines.push("");
+        textLines.push(
           "Please reply to confirm you can make it. If the time doesn't work, let us know and we'll find another slot."
         );
       } else {
-        lines.push(
+        textLines.push(
           "We'll reach out shortly to schedule a time that works for you."
         );
       }
-      lines.push("");
-      lines.push(
+      textLines.push("");
+      textLines.push(
         "Come ready to talk through your idea, the problem you're solving, and where you want to take it."
       );
-      lines.push("");
-      lines.push("Talk soon,");
-      lines.push("Elan Innovate");
+      textLines.push("");
+      textLines.push("Talk soon,");
+      textLines.push("Elan Innovate");
+
       return {
         subject: "Your interview is scheduled — Elan Innovate",
-        body: lines.join("\n"),
+        text: textLines.join("\n"),
+        html: brandedEmail({
+          preheader: "Your interview details for the Elan Innovate Incubator",
+          heading: "Interview scheduled.",
+          bodyHtml: `
+            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Good news. Your application has advanced to the interview stage, where you'll present and defend your idea to our team.</p>
+            ${htmlExtra}
+            <p style="margin:16px 0 16px 0;">Come ready to talk through your idea, the problem you're solving, and where you want to take it.</p>
+          `,
+          ctaText: meetLink ? "Join the Meeting" : undefined,
+          ctaLink: meetLink ?? undefined,
+        }),
       };
     }
     default:
@@ -205,8 +243,6 @@ export async function POST(request: Request) {
           });
         }
 
-        // On acceptance, generate a one-time invite for the lead AND every
-        // team member, and email each of them their own registration link.
         let registrationLink: string | null = null;
         if (status === "accepted") {
           const { data: fullApp } = await admin
@@ -218,10 +254,10 @@ export async function POST(request: Request) {
           const leadEmail = fullApp?.email ?? app.email;
           const recipients: TeamMember[] = [
             { name: fullApp?.full_name ?? "", email: leadEmail },
-            ...(((fullApp?.team as TeamMember[] | null) ?? []).map((m) => ({
+            ...((fullApp?.team as TeamMember[] | null) ?? []).map((m) => ({
               name: m.name,
               email: m.email,
-            }))),
+            })),
           ];
 
           for (const person of recipients) {
@@ -272,6 +308,17 @@ export async function POST(request: Request) {
                     "Building with Momentum,",
                     "Elan Innovate",
                   ].join("\n"),
+                  html: brandedEmail({
+                    preheader: "You've been accepted into the Elan Innovate Incubator",
+                    heading: "You're in.",
+                    bodyHtml: `
+                      <p style="margin:0 0 16px 0;">Hi ${teamFirstName},</p>
+                      <p style="margin:0 0 16px 0;">Great news — the team behind <strong>"${fullApp?.full_name ?? "your team"}"</strong>'s application has been accepted into the Elan Innovate Incubator.</p>
+                      <p style="margin:0 0 16px 0;">We're glad to be building with you.</p>
+                    `,
+                    ctaText: "Create Your Fellow Account",
+                    ctaLink: link,
+                  }),
                 });
               } catch (e) {
                 console.error("Team member invite email failed:", e);
@@ -280,13 +327,7 @@ export async function POST(request: Request) {
           }
         }
 
-        const mail = emailForStatus(
-          status,
-          firstName,
-          typedInterview,
-          meetLink,
-          registrationLink
-        );
+        const mail = emailForStatus(status, firstName, typedInterview, meetLink, registrationLink);
         if (mail) {
           try {
             const transporter = nodemailer.createTransport({
@@ -300,7 +341,8 @@ export async function POST(request: Request) {
               from: `"Elan Innovate" <${process.env.GMAIL_USER}>`,
               to: app.email,
               subject: mail.subject,
-              text: mail.body,
+              text: mail.text,
+              html: mail.html,
             });
             emailed = true;
           } catch (e) {
