@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { site } from "@/lib/site";
+import NotificationBell from "@/components/portal/NotificationBell";
 
 export const dynamic = "force-dynamic";
 
@@ -117,9 +118,6 @@ export default async function PortalDashboard({
 
   const complete = isProfileComplete(fellow);
 
-  // If this fellow was invited by a lead, fetch pending edit requests they
-  // may have submitted (shown for the lead's own review below), and load
-  // the lead's shared idea info for display if this fellow IS a team member.
   let pendingRequests: {
     id: string;
     proposed_idea_name: string | null;
@@ -133,7 +131,6 @@ export default async function PortalDashboard({
   }[] = [];
 
   if (!fellow.lead_fellow_id) {
-    // This fellow IS a lead. Check for pending edit requests from their team.
     const { data: requests } = await admin
       .from("fellow_edit_requests")
       .select("*, proposer:proposed_by(full_name)")
@@ -156,9 +153,12 @@ export default async function PortalDashboard({
   return (
     <main className="min-h-screen bg-paper px-4 py-10 md:px-8">
       <div className="mx-auto max-w-3xl">
-        <p className="mb-2 inline-block border-2 border-ink px-3 py-1 text-xs font-bold uppercase tracking-widest">
-          Fellow Portal
-        </p>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="inline-block border-2 border-ink px-3 py-1 text-xs font-bold uppercase tracking-widest">
+            Fellow Portal
+          </p>
+          <NotificationBell />
+        </div>
         <h1 className="mb-8 text-3xl font-black uppercase leading-none tracking-tight md:text-4xl">
           Welcome, {fellow.full_name?.split(" ")[0] ?? "there"}.
         </h1>
