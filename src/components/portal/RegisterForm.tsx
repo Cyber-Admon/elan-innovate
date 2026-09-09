@@ -14,11 +14,16 @@ export default function RegisterForm({
 }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function signInWithGoogle() {
+    if (!agreed) {
+      setError("Please agree to the Privacy Policy and Program Terms first.");
+      return;
+    }
     setGoogleLoading(true);
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
@@ -33,6 +38,10 @@ export default function RegisterForm({
     e.preventDefault();
     setError(null);
 
+    if (!agreed) {
+      setError("Please agree to the Privacy Policy and Program Terms first.");
+      return;
+    }
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
@@ -104,11 +113,41 @@ export default function RegisterForm({
           profile and the community.
         </p>
 
+        <label className="mb-6 flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-1 h-5 w-5 accent-[#ff6a00]"
+          />
+          <span className="text-sm font-medium text-paper/80">
+            I agree to the{" "}
+            
+            <a  href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-strike hover:underline"
+            >
+              Privacy Policy
+            </a>{" "}
+            and{" "}
+            
+            <a  href="/program-terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-strike hover:underline"
+            >
+              Program Terms
+            </a>
+            . *
+          </span>
+        </label>
+
         <button
           type="button"
           onClick={signInWithGoogle}
-          disabled={googleLoading}
-          className="mb-6 flex w-full items-center justify-center gap-3 border-4 border-paper bg-paper px-6 py-4 text-sm font-bold uppercase tracking-wide text-ink transition-colors hover:bg-strike hover:text-paper disabled:opacity-60"
+          disabled={googleLoading || !agreed}
+          className="mb-6 flex w-full items-center justify-center gap-3 border-4 border-paper bg-paper px-6 py-4 text-sm font-bold uppercase tracking-wide text-ink transition-colors hover:bg-strike hover:text-paper disabled:cursor-not-allowed disabled:opacity-50"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -159,8 +198,8 @@ export default function RegisterForm({
 
           <button
             type="submit"
-            disabled={loading}
-            className="bg-strike px-6 py-4 text-sm font-bold uppercase tracking-wide text-paper transition-colors hover:bg-paper hover:text-ink disabled:opacity-60"
+            disabled={loading || !agreed}
+            className="bg-strike px-6 py-4 text-sm font-bold uppercase tracking-wide text-paper transition-colors hover:bg-paper hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Creating account..." : "Create account"}
           </button>

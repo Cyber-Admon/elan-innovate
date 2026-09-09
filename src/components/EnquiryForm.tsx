@@ -25,6 +25,7 @@ export default function EnquiryForm() {
     service: "",
     details: "",
   });
+  const [agreed, setAgreed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +48,6 @@ export default function EnquiryForm() {
     )}`;
   }
 
-  // Fire-and-forget save so a WhatsApp enquiry still lands in Supabase + email.
   function logEnquiry() {
     return fetch("/api/enquiry", {
       method: "POST",
@@ -65,7 +65,7 @@ export default function EnquiryForm() {
   }
 
   function sendWhatsApp() {
-    // Open the chat synchronously to avoid popup blocking, then log.
+    if (!agreed) return;
     const url = buildWhatsAppUrl();
     const win = window.open(url, "_blank", "noopener,noreferrer");
     logEnquiry();
@@ -74,6 +74,7 @@ export default function EnquiryForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!agreed) return;
     setSubmitting(true);
     setError(null);
 
@@ -219,6 +220,37 @@ export default function EnquiryForm() {
         />
       </div>
 
+      <label className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          required
+          checked={agreed}
+          onChange={(e) => setAgreed(e.target.checked)}
+          className="mt-1 h-5 w-5 accent-[#ff6a00]"
+        />
+        <span className="text-sm font-medium text-ink/80">
+          I agree to the{" "}
+          
+          <a  href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-strike hover:underline"
+          >
+            Privacy Policy
+          </a>{" "}
+          and{" "}
+          
+          <a  href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-strike hover:underline"
+          >
+            Terms of Use
+          </a>
+          . *
+        </span>
+      </label>
+
       {error && (
         <p className="border-4 border-strike p-4 text-sm font-bold uppercase tracking-wide text-strike">
           {error}
@@ -228,15 +260,16 @@ export default function EnquiryForm() {
       <div className="flex flex-col gap-3 sm:flex-row">
         <button
           type="submit"
-          disabled={submitting}
-          className="bg-strike px-8 py-4 text-base font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink disabled:opacity-60"
+          disabled={submitting || !agreed}
+          className="bg-strike px-8 py-4 text-base font-bold uppercase tracking-wide text-paper transition-colors hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Sending..." : "Send enquiry"}
         </button>
         <button
           type="button"
           onClick={sendWhatsApp}
-          className="border-4 border-ink px-8 py-4 text-base font-bold uppercase tracking-wide transition-colors hover:bg-ink hover:text-paper"
+          disabled={!agreed}
+          className="border-4 border-ink px-8 py-4 text-base font-bold uppercase tracking-wide transition-colors hover:bg-ink hover:text-paper disabled:cursor-not-allowed disabled:opacity-40"
         >
           Send on WhatsApp
         </button>
