@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { brandedEmail, escapeHtml } from "@/lib/email-template";
+import { publicFormLimiter, getClientIp } from "@/lib/rate-limit";
 
 const REQUIRED_FIELDS = [
   "fullName",
@@ -15,6 +16,15 @@ const REQUIRED_FIELDS = [
 ] as const;
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const { success } = await publicFormLimiter.limit(ip);
+  if (!success) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again shortly." },
+      { status: 429 }
+    );
+  }
+
   try {
     const application = await request.json();
 
