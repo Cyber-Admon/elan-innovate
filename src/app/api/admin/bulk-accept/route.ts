@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { brandedEmail, escapeHtml } from "@/lib/email-template";
+import { logAdminAction } from "@/lib/audit-log";
 
 type Recipient = { name: string; email: string };
 
@@ -103,6 +104,13 @@ export async function POST(request: Request) {
       results.push({ email: person.email, ok: false });
     }
   }
+
+  await logAdminAction({
+    adminId: user.id,
+    adminEmail: user.email ?? "",
+    action: "bulk_accept",
+    details: { count: recipients.length, results },
+  });
 
   return NextResponse.json({ results });
 }

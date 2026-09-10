@@ -4,6 +4,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { createInterviewEvent } from "@/lib/google-calendar";
 import { brandedEmail, escapeHtml } from "@/lib/email-template";
+import { logAdminAction } from "@/lib/audit-log";
 
 const VALID_STATUS = [
   "new",
@@ -207,6 +208,16 @@ export async function POST(request: Request) {
   const { error } = await admin.from("applications").update(update).eq("id", id);
   if (error) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
+  }
+
+  if (typeof status === "string") {
+    await logAdminAction({
+      adminId: user.id,
+      adminEmail: user.email ?? "",
+      action: "application_status_change",
+      target: id,
+      details: { status },
+    });
   }
 
   let emailed = false;

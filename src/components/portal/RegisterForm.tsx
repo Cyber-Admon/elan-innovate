@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { validatePassword } from "@/lib/password-rules";
 
 export default function RegisterForm({
   token,
@@ -42,8 +43,10 @@ export default function RegisterForm({
       setError("Please agree to the Privacy Policy and Program Terms first.");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (password !== confirm) {
@@ -178,7 +181,7 @@ export default function RegisterForm({
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Create a password (min 8 characters)"
+            placeholder="Create a password (min 8 characters, letters + numbers)"
             className="w-full border-4 border-paper bg-ink px-4 py-3 text-base font-medium text-paper placeholder:text-paper/40"
           />
           <input
