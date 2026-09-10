@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
-import { brandedEmail } from "@/lib/email-template";
+import { brandedEmail, escapeHtml } from "@/lib/email-template";
 
 const REQUIRED_FIELDS = [
   "name",
@@ -59,7 +59,6 @@ export async function POST(request: Request) {
           },
         });
 
-        // Notify the Elan inbox with the full enquiry
         await transporter.sendMail({
           from: `"Elan Innovate Website" <${process.env.GMAIL_USER}>`,
           to: process.env.GMAIL_USER,
@@ -81,7 +80,6 @@ export async function POST(request: Request) {
             .join("\n"),
         });
 
-        // Acknowledge the enquirer
         const firstName = enquiry.name.trim().split(" ")[0];
         await transporter.sendMail({
           from: `"Elan Innovate" <${process.env.GMAIL_USER}>`,
@@ -101,8 +99,8 @@ export async function POST(request: Request) {
             preheader: "We've received your enquiry",
             heading: "We've got your enquiry.",
             bodyHtml: `
-              <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
-              <p style="margin:0 0 16px 0;">Thanks for reaching out about <strong>${enquiry.service}</strong>. We've received your enquiry and will come back to you shortly with a quote and next steps.</p>
+              <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
+              <p style="margin:0 0 16px 0;">Thanks for reaching out about <strong>${escapeHtml(enquiry.service)}</strong>. We've received your enquiry and will come back to you shortly with a quote and next steps.</p>
               <p style="margin:0 0 16px 0;">Need it faster? Just reply to this email or message us on WhatsApp.</p>
             `,
           }),

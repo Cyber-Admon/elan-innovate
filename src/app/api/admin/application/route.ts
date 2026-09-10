@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { createInterviewEvent } from "@/lib/google-calendar";
-import { brandedEmail } from "@/lib/email-template";
+import { brandedEmail, escapeHtml } from "@/lib/email-template";
 
 const VALID_STATUS = [
   "new",
@@ -64,7 +64,7 @@ function emailForStatus(
           preheader: "You've been accepted into the Elan Innovate Incubator",
           heading: "You're in.",
           bodyHtml: `
-            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
             <p style="margin:0 0 16px 0;">Congratulations. After reviewing your application, we'd like to welcome you into the <strong>Elan Innovate Incubator</strong>.</p>
             <p style="margin:0 0 16px 0;">We're glad to be building with you.</p>
           `,
@@ -91,7 +91,7 @@ function emailForStatus(
           preheader: "An update on your Elan Innovate application",
           heading: "Application update.",
           bodyHtml: `
-            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
             <p style="margin:0 0 16px 0;">Thank you for applying to the Elan Innovate Incubator and for sharing your idea with us.</p>
             <p style="margin:0 0 16px 0;">After careful review, we won't be moving forward with your application for this cohort. This isn't a judgment on your potential. We had limited spots and many strong applicants, and the decision was genuinely difficult.</p>
             <p style="margin:0 0 16px 0;">We'd be glad to see you apply again for a future cohort, and you're welcome to join our community in the meantime.</p>
@@ -112,12 +112,12 @@ function emailForStatus(
       let htmlExtra = "";
       if (when) {
         textLines.push(`Your interview is scheduled for: ${when}.`);
-        htmlExtra += `<p style="margin:0 0 8px 0;"><strong>Scheduled for:</strong> ${when}</p>`;
+        htmlExtra += `<p style="margin:0 0 8px 0;"><strong>Scheduled for:</strong> ${escapeHtml(when)}</p>`;
         if (meetLink) {
           textLines.push(`Join here: ${meetLink}`);
         } else if (interview?.place) {
           textLines.push(`Location / link: ${interview.place}.`);
-          htmlExtra += `<p style="margin:0 0 16px 0;"><strong>Where:</strong> ${interview.place}</p>`;
+          htmlExtra += `<p style="margin:0 0 16px 0;"><strong>Where:</strong> ${escapeHtml(interview.place)}</p>`;
         }
         textLines.push("");
         textLines.push(
@@ -143,7 +143,7 @@ function emailForStatus(
           preheader: "Your interview details for the Elan Innovate Incubator",
           heading: "Interview scheduled.",
           bodyHtml: `
-            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
             <p style="margin:0 0 16px 0;">Good news. Your application has advanced to the interview stage, where you'll present and defend your idea to our team.</p>
             ${htmlExtra}
             <p style="margin:16px 0 16px 0;">Come ready to talk through your idea, the problem you're solving, and where you want to take it.</p>
@@ -312,8 +312,8 @@ export async function POST(request: Request) {
                     preheader: "You've been accepted into the Elan Innovate Incubator",
                     heading: "You're in.",
                     bodyHtml: `
-                      <p style="margin:0 0 16px 0;">Hi ${teamFirstName},</p>
-                      <p style="margin:0 0 16px 0;">Great news — the team behind <strong>"${fullApp?.full_name ?? "your team"}"</strong>'s application has been accepted into the Elan Innovate Incubator.</p>
+                      <p style="margin:0 0 16px 0;">Hi ${escapeHtml(teamFirstName)},</p>
+                      <p style="margin:0 0 16px 0;">Great news — the team behind <strong>"${escapeHtml(fullApp?.full_name ?? "your team")}"</strong>'s application has been accepted into the Elan Innovate Incubator.</p>
                       <p style="margin:0 0 16px 0;">We're glad to be building with you.</p>
                     `,
                     ctaText: "Create Your Fellow Account",

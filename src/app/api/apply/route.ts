@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
-import { brandedEmail } from "@/lib/email-template";
+import { brandedEmail, escapeHtml } from "@/lib/email-template";
 
 const REQUIRED_FIELDS = [
   "fullName",
@@ -72,7 +72,6 @@ export async function POST(request: Request) {
 
         const firstName = application.fullName.trim().split(" ")[0];
 
-        // Confirmation to the applicant
         await transporter.sendMail({
           from: `"Elan Innovate" <${process.env.GMAIL_USER}>`,
           to: application.email,
@@ -94,15 +93,14 @@ export async function POST(request: Request) {
             preheader: "Your Elan Innovate Incubator application has been received",
             heading: "You're in the pipeline.",
             bodyHtml: `
-              <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
-              <p style="margin:0 0 16px 0;">We've received your application to the Elan Innovate Incubator for <strong>"${application.ideaName}"</strong>. You're officially in the pipeline.</p>
+              <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
+              <p style="margin:0 0 16px 0;">We've received your application to the Elan Innovate Incubator for <strong>"${escapeHtml(application.ideaName)}"</strong>. You're officially in the pipeline.</p>
               <p style="margin:0 0 16px 0;">Our team reviews every application, and we'll reach out with next steps as the cohort takes shape. You don't need to do anything else right now.</p>
               <p style="margin:0 0 16px 0;">Questions in the meantime? Just reply to this email.</p>
             `,
           }),
         });
 
-        // Notify the Elan inbox
         await transporter.sendMail({
           from: `"Elan Innovate Website" <${process.env.GMAIL_USER}>`,
           to: process.env.GMAIL_USER,

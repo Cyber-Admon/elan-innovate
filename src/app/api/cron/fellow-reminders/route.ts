@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
-import { brandedEmail } from "@/lib/email-template";
+import { brandedEmail, escapeHtml } from "@/lib/email-template";
 import { site } from "@/lib/site";
 
-const REMINDER_INTERVAL_HOURS = 60; // roughly the middle of the 48-72hr window
+const REMINDER_INTERVAL_HOURS = 60;
 const REMOVAL_AFTER_DAYS = 7;
 
 function hoursSince(iso: string) {
@@ -16,7 +16,6 @@ function daysSince(iso: string) {
 }
 
 export async function GET(request: Request) {
-  // Simple shared-secret protection so only your cron job can trigger this.
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -41,7 +40,6 @@ export async function GET(request: Request) {
 
   const results = { remindedFellows: 0, removedFellows: 0, remindedInvites: 0 };
 
-  // --- Registered but incomplete profiles ---
   const { data: fellows } = await admin
     .from("fellows")
     .select("*")
@@ -90,7 +88,7 @@ export async function GET(request: Request) {
           preheader: "Finish setting up your Elan Innovate fellow profile",
           heading: "Finish your profile.",
           bodyHtml: `
-            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
             <p style="margin:0 0 16px 0;">Just a reminder to finish setting up your Elan Innovate fellow profile.</p>
             <p style="margin:0 0 16px 0;">Also, don't forget to join our fellow community: <a href="${site.fellowCommunity}" target="_blank" style="color:#FF6A00;">Join here</a>.</p>
             <p style="margin:0 0 16px 0;">Incomplete profiles are removed after 7 days.</p>
@@ -117,7 +115,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // --- Never-registered invites ---
   const { data: invites } = await admin
     .from("fellow_invites")
     .select("*")
@@ -125,7 +122,7 @@ export async function GET(request: Request) {
 
   for (const invite of invites ?? []) {
     const ageDays = daysSince(invite.created_at);
-    if (ageDays >= REMOVAL_AFTER_DAYS) continue; // no account to remove; just stop reminding implicitly by not sending past this age
+    if (ageDays >= REMOVAL_AFTER_DAYS) continue;
 
     const dueForReminder =
       !invite.last_reminder_sent_at ||
@@ -155,7 +152,7 @@ export async function GET(request: Request) {
           preheader: "You haven't created your fellow account yet",
           heading: "Still waiting on you.",
           bodyHtml: `
-            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
             <p style="margin:0 0 16px 0;">You were accepted into the Elan Innovate Incubator, but you haven't created your fellow account yet.</p>
           `,
           ctaText: "Create Your Fellow Account",

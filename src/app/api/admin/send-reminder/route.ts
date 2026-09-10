@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
-import { brandedEmail } from "@/lib/email-template";
+import { brandedEmail, escapeHtml } from "@/lib/email-template";
 import { site } from "@/lib/site";
 
 export async function POST(request: Request) {
@@ -25,7 +25,6 @@ export async function POST(request: Request) {
   }
 
   const { type, id } = await request.json();
-  // type: "incomplete_profile" | "never_registered"
 
   if (!type || !id) {
     return NextResponse.json({ error: "Missing type or id" }, { status: 400 });
@@ -84,7 +83,7 @@ export async function POST(request: Request) {
           preheader: "Finish setting up your Elan Innovate fellow profile",
           heading: "Finish your profile.",
           bodyHtml: `
-            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
             <p style="margin:0 0 16px 0;">Just a reminder to finish setting up your Elan Innovate fellow profile. It only takes a couple of minutes.</p>
             <p style="margin:0 0 16px 0;">Also, don't forget to join our fellow community for updates: <a href="${site.fellowCommunity}" target="_blank" style="color:#FF6A00;">Join here</a>.</p>
             <p style="margin:0 0 16px 0;">Incomplete profiles are removed after 7 days.</p>
@@ -141,7 +140,7 @@ export async function POST(request: Request) {
           preheader: "You haven't created your fellow account yet",
           heading: "Still waiting on you.",
           bodyHtml: `
-            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
             <p style="margin:0 0 16px 0;">You were accepted into the Elan Innovate Incubator, but you haven't created your fellow account yet.</p>
           `,
           ctaText: "Create Your Fellow Account",

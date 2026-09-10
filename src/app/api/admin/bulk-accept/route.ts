@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
-import { brandedEmail } from "@/lib/email-template";
+import { brandedEmail, escapeHtml } from "@/lib/email-template";
 
 type Recipient = { name: string; email: string };
 
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
           preheader: "You've been accepted into the Elan Innovate Incubator",
           heading: "You're in.",
           bodyHtml: `
-            <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+            <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
             <p style="margin:0 0 16px 0;">Congratulations. After reviewing your application, we'd like to welcome you into the <strong>Elan Innovate Incubator</strong>.</p>
             <p style="margin:0 0 16px 0;">We're glad to be building with you.</p>
           `,

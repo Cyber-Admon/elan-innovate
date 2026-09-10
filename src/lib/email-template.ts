@@ -1,3 +1,12 @@
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function brandedEmail({
   preheader,
   heading,
@@ -7,7 +16,7 @@ export function brandedEmail({
 }: {
   preheader?: string;
   heading: string;
-  bodyHtml: string;
+  bodyHtml: string; // caller must escape any user-supplied values before building this
   ctaText?: string;
   ctaLink?: string;
 }) {
@@ -20,7 +29,7 @@ export function brandedEmail({
   <title>Elan Innovate</title>
 </head>
 <body style="margin:0; padding:0; background-color:#FFFFFC; font-family: Arial, Helvetica, sans-serif;">
-  ${preheader ? `<div style="display:none; max-height:0; overflow:hidden;">${preheader}</div>` : ""}
+  ${preheader ? `<div style="display:none; max-height:0; overflow:hidden;">${escapeHtml(preheader)}</div>` : ""}
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFFFC; padding: 32px 16px;">
     <tr>
       <td align="center">
@@ -35,7 +44,7 @@ export function brandedEmail({
           <tr>
             <td style="padding: 32px;">
               <h1 style="margin: 0 0 20px 0; font-size: 22px; font-weight: 900; text-transform: uppercase; color: #000000; line-height: 1.2;">
-                ${heading}
+                ${escapeHtml(heading)}
               </h1>
               <div style="font-size: 15px; line-height: 1.6; color: #000000;">
                 ${bodyHtml}
@@ -47,7 +56,7 @@ export function brandedEmail({
                 <tr>
                   <td style="background-color:#FF6A00;">
                     <a href="${ctaLink}" target="_blank" style="display:inline-block; padding: 14px 28px; color:#FFFFFC; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; text-decoration: none; font-size: 14px;">
-                      ${ctaText}
+                      ${escapeHtml(ctaText)}
                     </a>
                   </td>
                 </tr>

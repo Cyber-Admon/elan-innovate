@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
-import { brandedEmail } from "@/lib/email-template";
+import { brandedEmail, escapeHtml } from "@/lib/email-template";
 
 type TeamMemberInput = {
   name: string;
@@ -95,7 +95,6 @@ export async function POST(request: Request) {
           application_id: null,
           full_name: member.name,
           email: member.email,
-          lead_fellow_id: user.id,
         })
         .select("token")
         .single();
@@ -131,7 +130,7 @@ export async function POST(request: Request) {
               preheader: "You've been invited to join the Elan Innovate Incubator",
               heading: "You're invited.",
               bodyHtml: `
-                <p style="margin:0 0 16px 0;">Hi ${firstName},</p>
+                <p style="margin:0 0 16px 0;">Hi ${escapeHtml(firstName)},</p>
                 <p style="margin:0 0 16px 0;">You've been added as a team member on an Elan Innovate Incubator fellow's profile, and they'd like you to join as a fellow too.</p>
                 <p style="margin:0 0 16px 0;">We're glad to be building with you.</p>
               `,
