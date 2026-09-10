@@ -12,6 +12,7 @@ export default async function ApplicationsPage() {
   const { data } = await admin
     .from("applications")
     .select("*")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   return (
