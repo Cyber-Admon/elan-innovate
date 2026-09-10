@@ -56,7 +56,7 @@ export default function RegisterForm({
     const createRes = await fetch("/api/portal/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, fullName }),
+      body: JSON.stringify({ email, password, fullName, token }),
     });
 
     const createData = await createRes.json();
