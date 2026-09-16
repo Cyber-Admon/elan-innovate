@@ -73,8 +73,8 @@ export default async function FellowsPage() {
         )}
       </section>
 
-      {/* Registered fellows, with team filter + click-to-view */}
-      <FellowsBrowser fellows={list} teamMembers={teams} />
+      {/* Registered fellows: overview + team grouping + popup */}
+      <FellowsBrowser fellows={list} teamMembers={teams} pendingInvites={invites} />
     </main>
   );
 }

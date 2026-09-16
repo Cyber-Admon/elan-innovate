@@ -31,6 +31,13 @@ type TeamMember = {
   invite_sent: boolean;
 };
 
+type PendingInvite = {
+  token: string;
+  full_name: string;
+  email: string;
+  created_at: string;
+};
+
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -39,36 +46,122 @@ function fmtDate(iso: string) {
   });
 }
 
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="border-4 border-ink p-4">
+      <p className="text-3xl font-black leading-none text-strike">{value}</p>
+      <p className="mt-1 text-xs font-bold uppercase tracking-widest">{label}</p>
+    </div>
+  );
+}
+
 export default function FellowsBrowser({
   fellows,
   teamMembers,
+  pendingInvites,
 }: {
   fellows: Fellow[];
   teamMembers: TeamMember[];
+  pendingInvites: PendingInvite[];
 }) {
   const [teamFilter, setTeamFilter] = useState<string>("all");
   const [openFellow, setOpenFellow] = useState<Fellow | null>(null);
 
-  const teamOptions = useMemo(() => {
-    const teams = new Map<string, string>(); // team_id -> label (lead name)
+  // Build team groups: team_id -> { lead, members[] }
+  const teamGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      { lead: Fellow | null; members: Fellow[]; label: string }
+    >();
+
     for (const f of fellows) {
-      if (f.team_id && !f.lead_fellow_id) {
-        teams.set(f.team_id, f.full_name || f.email);
+      const key = f.team_id ?? f.id; // fallback so solo fellows still group
+      if (!groups.has(key)) {
+        groups.set(key, { lead: null, members: [], label: "" });
+      }
+      const g = groups.get(key)!;
+      if (!f.lead_fellow_id) {
+        g.lead = f;
+        g.label = f.full_name || f.email;
+      } else {
+        g.members.push(f);
       }
     }
-    return Array.from(teams.entries());
+
+    // Any group with no lead found yet (member registered before lead) still
+    // needs a label; fall back to the first member's name.
+    for (const g of groups.values()) {
+      if (!g.label && g.members[0]) {
+        g.label = `${g.members[0].full_name || g.members[0].email}'s team`;
+      }
+    }
+
+    return Array.from(groups.entries());
   }, [fellows]);
 
-  const filtered =
+  const filteredGroups =
     teamFilter === "all"
-      ? fellows
-      : fellows.filter((f) => f.team_id === teamFilter);
+      ? teamGroups
+      : teamGroups.filter(([teamId]) => teamId === teamFilter);
+
+  // Overview stats
+  const totalRegistered = fellows.length;
+  const totalNotRegistered = pendingInvites.length;
+  const completeCount = fellows.filter((f) => f.bio && f.phone).length;
+  const incompleteCount = totalRegistered - completeCount;
+  const removedCount = fellows.filter((f) => f.status === "removed").length;
+  const teamCount = teamGroups.length;
+
+  function renderFellowRow(f: Fellow, isLead: boolean) {
+    const complete = !!(f.bio && f.phone);
+    return (
+      <button
+        key={f.id}
+        type="button"
+        onClick={() => setOpenFellow(f)}
+        className="flex w-full flex-wrap items-center justify-between gap-3 border-2 border-ink/20 p-3 text-left transition-colors hover:bg-ink hover:text-paper"
+      >
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold uppercase leading-tight">
+            {f.full_name || f.email}
+            {isLead && (
+              <span className="ml-2 bg-strike px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-paper">
+                Lead
+              </span>
+            )}
+          </p>
+          <p className="truncate text-xs opacity-60">{f.idea_name || "No idea set"}</p>
+        </div>
+        <span
+          className={`shrink-0 px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${
+            f.status === "removed"
+              ? "border-2 border-current opacity-60"
+              : complete
+              ? "bg-strike text-paper"
+              : "border-2 border-current opacity-80"
+          }`}
+        >
+          {f.status === "removed" ? "Removed" : complete ? "Complete" : "Incomplete"}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <section>
+      {/* Overview stats */}
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+        <StatCard label="Registered" value={totalRegistered} />
+        <StatCard label="Not registered" value={totalNotRegistered} />
+        <StatCard label="Complete" value={completeCount} />
+        <StatCard label="Incomplete" value={incompleteCount} />
+        <StatCard label="Removed" value={removedCount} />
+        <StatCard label="Teams" value={teamCount} />
+      </div>
+
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-xl font-black uppercase tracking-tight">
-          Registered ({filtered.length})
+          Registered, by team
         </h2>
         <select
           value={teamFilter}
@@ -76,56 +169,31 @@ export default function FellowsBrowser({
           className="border-4 border-ink bg-paper px-4 py-2 text-xs font-bold uppercase tracking-widest"
         >
           <option value="all">All teams</option>
-          {teamOptions.map(([teamId, label]) => (
+          {teamGroups.map(([teamId, g]) => (
             <option key={teamId} value={teamId}>
-              {label}&apos;s team
+              {g.label}
             </option>
           ))}
         </select>
       </div>
 
-      {filtered.length === 0 ? (
+      {filteredGroups.length === 0 ? (
         <p className="border-4 border-ink p-6 text-sm font-bold uppercase tracking-wide text-ink/50">
           No fellows here.
         </p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {filtered.map((f) => {
-            const complete = !!(f.bio && f.phone);
-            return (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setOpenFellow(f)}
-                className="flex flex-wrap items-center justify-between gap-3 border-4 border-ink p-4 text-left transition-colors hover:bg-ink hover:text-paper"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-black uppercase leading-tight">
-                    {f.full_name || f.email}
-                  </p>
-                  <p className="truncate text-sm opacity-60">
-                    {f.idea_name || "No idea set"}
-                    {f.lead_fellow_id ? " · Team member" : " · Lead"}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${
-                    f.status === "removed"
-                      ? "border-2 border-current opacity-60"
-                      : complete
-                      ? "bg-strike text-paper"
-                      : "border-2 border-current opacity-80"
-                  }`}
-                >
-                  {f.status === "removed"
-                    ? "Removed"
-                    : complete
-                    ? "Complete"
-                    : "Incomplete"}
-                </span>
-              </button>
-            );
-          })}
+        <div className="flex flex-col gap-6">
+          {filteredGroups.map(([teamId, g]) => (
+            <div key={teamId} className="border-4 border-ink p-4">
+              <p className="mb-3 text-xs font-bold uppercase tracking-widest text-ink/50">
+                {g.label} · {1 + g.members.length} {g.members.length === 0 ? "member" : "members"}
+              </p>
+              <div className="flex flex-col gap-2">
+                {g.lead && renderFellowRow(g.lead, true)}
+                {g.members.map((m) => renderFellowRow(m, false))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
