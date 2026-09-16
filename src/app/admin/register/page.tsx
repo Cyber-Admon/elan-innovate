@@ -25,7 +25,7 @@ export default function AdminRegister() {
 
     setLoading(true);
     const supabase = createClient();
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
@@ -33,12 +33,34 @@ export default function AdminRegister() {
         data: { full_name: form.fullName },
       },
     });
-    setLoading(false);
 
-    if (signUpError) {
-      setError(signUpError.message);
+    if (signUpError || !data.user) {
+      setLoading(false);
+      setError(signUpError?.message ?? "Could not create account.");
       return;
     }
+
+    // Explicitly create the pending admin_users row, rather than relying
+    // on a blanket auth trigger (which also fired for fellow signups).
+    const completeRes = await fetch("/api/admin/complete-registration", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: data.user.id,
+        email: form.email,
+        fullName: form.fullName,
+      }),
+    });
+
+    setLoading(false);
+
+    if (!completeRes.ok) {
+      setError(
+        "Account created, but something went wrong finishing setup. Contact us.",
+      );
+      return;
+    }
+
     setDone(true);
   }
 
@@ -71,9 +93,9 @@ export default function AdminRegister() {
             </h1>
             <p className="mb-6 text-sm font-medium leading-relaxed text-paper/70">
               We&apos;ve sent a verification link to{" "}
-              <span className="font-bold text-paper">{form.email}</span>. Click it
-              to confirm, then a super admin will review your access. Check spam
-              if it doesn&apos;t arrive in a minute.
+              <span className="font-bold text-paper">{form.email}</span>. Click
+              it to confirm, then a super admin will review your access. Check
+              spam if it doesn&apos;t arrive in a minute.
             </p>
             <Link
               href="/admin/login"
@@ -137,7 +159,10 @@ export default function AdminRegister() {
 
             <p className="mt-6 text-sm font-medium text-paper/60">
               Already have access?{" "}
-              <Link href="/admin/login" className="font-bold text-strike hover:underline">
+              <Link
+                href="/admin/login"
+                className="font-bold text-strike hover:underline"
+              >
                 Sign in
               </Link>
             </p>
