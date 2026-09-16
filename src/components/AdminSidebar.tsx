@@ -10,6 +10,7 @@ const links = [
   { label: "Applications", href: "/admin/applications" },
   { label: "Enquiries", href: "/admin/enquiries" },
   { label: "Appointments", href: "/admin/appointments" },
+  { label: "Invited", href: "/admin/invited" },
   { label: "Fellows", href: "/admin/fellows" },
   { label: "Metrics", href: "/admin/metrics" },
 ];
@@ -41,7 +42,6 @@ export default function AdminSidebar({
 
   return (
     <>
-      {/* Mobile top bar */}
       <div className="flex items-center justify-between border-b-4 border-ink bg-ink px-4 py-3 text-paper md:hidden">
         <span className="text-sm font-black uppercase tracking-widest">
           Elan Admin
@@ -73,7 +73,6 @@ export default function AdminSidebar({
         </button>
       </div>
 
-      {/* Sidebar */}
       <aside
         className={`${
           open ? "block" : "hidden"
