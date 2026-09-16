@@ -41,13 +41,17 @@ export default async function FellowsPage() {
         Fellows
       </h1>
 
-      {/* Never registered */}
-      <section className="mb-10">
-        <h2 className="mb-4 text-xl font-black uppercase tracking-tight">
-          Not Yet Registered ({invites.length})
+      {/* Invited, but not yet fellows (no account created) */}
+      <section className="mb-10 border-4 border-ink/30 p-5">
+        <h2 className="mb-1 text-xl font-black uppercase tracking-tight text-ink/70">
+          Invited — Not Fellows Yet ({invites.length})
         </h2>
+        <p className="mb-4 text-xs font-medium text-ink/50">
+          These people have an invite link but haven&apos;t created an account.
+          They don&apos;t count as fellows until they register.
+        </p>
         {invites.length === 0 ? (
-          <p className="border-4 border-ink p-5 text-sm font-bold uppercase tracking-wide text-ink/50">
+          <p className="border-2 border-ink/30 p-5 text-sm font-bold uppercase tracking-wide text-ink/50">
             Everyone with an invite has registered.
           </p>
         ) : (
@@ -55,7 +59,7 @@ export default async function FellowsPage() {
             {invites.map((inv) => (
               <div
                 key={inv.token}
-                className="flex flex-wrap items-center justify-between gap-4 border-4 border-ink p-4"
+                className="flex flex-wrap items-center justify-between gap-4 border-2 border-ink/30 p-4"
               >
                 <div>
                   <p className="font-bold">{inv.full_name || "Unknown"}</p>
@@ -73,7 +77,7 @@ export default async function FellowsPage() {
         )}
       </section>
 
-      {/* Registered fellows: overview + team grouping + popup */}
+      {/* Actual fellows: registered accounts, overview + team grouping + popup */}
       <FellowsBrowser fellows={list} teamMembers={teams} pendingInvites={invites} />
     </main>
   );
