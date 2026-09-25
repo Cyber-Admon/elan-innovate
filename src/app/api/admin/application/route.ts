@@ -10,6 +10,7 @@ const VALID_STATUS = [
   "new",
   "internal_review",
   "external_review",
+  "interviewed",
   "accepted",
   "rejected",
 ];
@@ -179,13 +180,18 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { id, status, notes, interview } = body;
+  const { id, status, notes, interview, interviewRemarks, interviewNextSteps } = body;
 
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
   }
 
-  const update: { status?: string; notes?: string } = {};
+  const update: {
+    status?: string;
+    notes?: string;
+    interview_remarks?: string;
+    interview_next_steps?: string;
+  } = {};
   if (typeof status === "string") {
     if (!VALID_STATUS.includes(status)) {
       return NextResponse.json({ error: "Bad status" }, { status: 400 });
@@ -194,6 +200,12 @@ export async function POST(request: Request) {
   }
   if (typeof notes === "string") {
     update.notes = notes;
+  }
+  if (typeof interviewRemarks === "string") {
+    update.interview_remarks = interviewRemarks;
+  }
+  if (typeof interviewNextSteps === "string") {
+    update.interview_next_steps = interviewNextSteps;
   }
 
   if (Object.keys(update).length === 0) {

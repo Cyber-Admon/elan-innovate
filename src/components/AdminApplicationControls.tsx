@@ -6,6 +6,7 @@ const STATUSES = [
   { value: "new", label: "New" },
   { value: "internal_review", label: "Internal Review" },
   { value: "external_review", label: "External Review" },
+  { value: "interviewed", label: "Interviewed" },
   { value: "accepted", label: "Accepted" },
   { value: "rejected", label: "Rejected" },
 ];
@@ -13,11 +14,13 @@ const STATUSES = [
 const statusColor: Record<string, string> = {
   new: "bg-ink text-paper",
   internal_review: "bg-navy text-paper",
+  interviewed: "bg-navy text-paper",
   accepted: "bg-strike text-paper",
   rejected: "border-2 border-ink text-ink",
 };
 
 const ASK_EMAIL = ["external_review"];
+const ASK_INTERVIEW_NOTES = ["interviewed"];
 
 export default function AdminApplicationControls({
   id,
@@ -26,6 +29,8 @@ export default function AdminApplicationControls({
   ideaName,
   initialStatus,
   initialNotes,
+  initialInterviewRemarks,
+  initialInterviewNextSteps,
 }: {
   id: string;
   applicantName?: string;
@@ -33,6 +38,8 @@ export default function AdminApplicationControls({
   ideaName?: string;
   initialStatus: string;
   initialNotes: string | null;
+  initialInterviewRemarks?: string | null;
+  initialInterviewNextSteps?: string | null;
 }) {
   const [status, setStatus] = useState(initialStatus || "new");
   const [notes, setNotes] = useState(initialNotes ?? "");
@@ -47,10 +54,17 @@ export default function AdminApplicationControls({
   const [intTime, setIntTime] = useState("");
   const [intPlace, setIntPlace] = useState("");
 
+  // Interviewed-stage remarks/next-steps
+  const [showInterviewForm, setShowInterviewForm] = useState(false);
+  const [interviewRemarks, setInterviewRemarks] = useState(initialInterviewRemarks ?? "");
+  const [interviewNextSteps, setInterviewNextSteps] = useState(initialInterviewNextSteps ?? "");
+  const [savingInterviewNotes, setSavingInterviewNotes] = useState(false);
+
   async function applyStatus(
     next: string,
     sendEmail: boolean,
-    interview?: { date: string; time: string; place: string }
+    interview?: { date: string; time: string; place: string },
+    extra?: { interviewRemarks?: string; interviewNextSteps?: string }
   ) {
     const prev = status;
     setStatus(next);
@@ -60,7 +74,7 @@ export default function AdminApplicationControls({
       const res = await fetch("/api/admin/application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: next, sendEmail, interview }),
+        body: JSON.stringify({ id, status: next, sendEmail, interview, ...extra }),
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
@@ -83,6 +97,10 @@ export default function AdminApplicationControls({
       setConfirming(true);
       return;
     }
+    if (ASK_INTERVIEW_NOTES.includes(next)) {
+      setShowInterviewForm(true);
+      return;
+    }
     if (next === status) return;
     applyStatus(next, false);
   }
@@ -97,6 +115,16 @@ export default function AdminApplicationControls({
     setIntDate("");
     setIntTime("");
     setIntPlace("");
+  }
+
+  async function saveInterviewNotes() {
+    setSavingInterviewNotes(true);
+    await applyStatus("interviewed", false, undefined, {
+      interviewRemarks,
+      interviewNextSteps,
+    });
+    setSavingInterviewNotes(false);
+    setShowInterviewForm(false);
   }
 
   async function generateMeetLink() {
@@ -161,8 +189,6 @@ export default function AdminApplicationControls({
       </div>
       <div className="mb-2 flex flex-wrap gap-2">
         {STATUSES.map((s) => {
-          // Treat External Review as "active-looking" while the confirm
-          // form is open, even though the real status hasn't saved yet.
           const active =
             status === s.value || (confirming && s.value === "external_review");
           const isPeri = s.value === "external_review";
@@ -191,10 +217,61 @@ export default function AdminApplicationControls({
         })}
       </div>
       <p className="mb-5 text-xs font-medium text-ink/40">
-        Accepted and rejected email the applicant automatically. Internal review
-        is silent. Click External Review any time to schedule or reschedule.
+        Accepted and rejected email the applicant automatically. Internal
+        review and Interviewed are silent.
       </p>
 
+      {/* Interviewed remarks/next-steps form */}
+      {showInterviewForm && (
+        <div className="mb-5 border-4 border-ink bg-navy p-4 text-paper">
+          <p className="mb-3 text-sm font-bold uppercase tracking-wide">
+            Interview notes
+          </p>
+          <div className="mb-4">
+            <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-paper/60">
+              Remarks
+            </label>
+            <textarea
+              rows={3}
+              value={interviewRemarks}
+              onChange={(e) => setInterviewRemarks(e.target.value)}
+              placeholder="How did the interview go?"
+              className="w-full border-4 border-paper bg-navy px-3 py-2 text-sm font-medium text-paper placeholder:text-paper/40"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-paper/60">
+              Next steps
+            </label>
+            <textarea
+              rows={2}
+              value={interviewNextSteps}
+              onChange={(e) => setInterviewNextSteps(e.target.value)}
+              placeholder="What happens next for this applicant?"
+              className="w-full border-4 border-paper bg-navy px-3 py-2 text-sm font-medium text-paper placeholder:text-paper/40"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={saveInterviewNotes}
+              disabled={savingInterviewNotes}
+              className="bg-strike px-4 py-2 text-xs font-bold uppercase tracking-widest text-paper hover:bg-paper hover:text-ink disabled:opacity-50"
+            >
+              {savingInterviewNotes ? "Saving..." : "Save + mark interviewed"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowInterviewForm(false)}
+              className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-paper/60 hover:text-paper"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* External review confirm prompt with interview schedule */}
       {confirming && (
         <div className="mb-5 border-4 border-ink bg-navy p-4 text-paper">
           <p className="mb-3 text-sm font-bold uppercase tracking-wide">
@@ -288,6 +365,34 @@ export default function AdminApplicationControls({
           {!canSend && (
             <p className="mt-2 text-xs font-medium text-paper/50">
               Date and time are required to send the invite.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Show saved interview notes when not editing */}
+      {!showInterviewForm && (interviewRemarks || interviewNextSteps) && (
+        <div className="mb-5 border-4 border-ink/20 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-widest text-ink/50">
+              Interview notes
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowInterviewForm(true)}
+              className="text-xs font-bold uppercase tracking-widest text-strike hover:underline"
+            >
+              Edit
+            </button>
+          </div>
+          {interviewRemarks && (
+            <p className="mb-2 text-sm">
+              <span className="font-bold">Remarks:</span> {interviewRemarks}
+            </p>
+          )}
+          {interviewNextSteps && (
+            <p className="text-sm">
+              <span className="font-bold">Next steps:</span> {interviewNextSteps}
             </p>
           )}
         </div>

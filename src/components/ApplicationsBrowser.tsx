@@ -19,13 +19,15 @@ type Application = {
   why: string;
   status: string;
   notes: string | null;
+  interview_remarks?: string | null;
+  interview_next_steps?: string | null;
   team: TeamMember[] | null;
 };
 
 const TABS = [
   { value: "all", label: "All", match: () => true },
   { value: "new", label: "New", match: (s: string) => s === "new" },
-  { value: "review", label: "Under Review", match: (s: string) => s === "internal_review" || s === "external_review" },
+  { value: "review", label: "Under Review", match: (s: string) => s === "internal_review" || s === "external_review" || s === "interviewed" },
   { value: "approved", label: "Approved", match: (s: string) => s === "accepted" },
   { value: "declined", label: "Declined", match: (s: string) => s === "rejected" },
 ];
@@ -34,6 +36,7 @@ const STATUS_LABEL: Record<string, string> = {
   new: "New",
   internal_review: "Internal Review",
   external_review: "External Review",
+  interviewed: "Interviewed",
   accepted: "Accepted",
   rejected: "Rejected",
 };
@@ -42,6 +45,7 @@ const STATUS_STYLE: Record<string, string> = {
   new: "bg-ink text-paper",
   internal_review: "bg-navy text-paper",
   external_review: "text-paper",
+  interviewed: "bg-navy text-paper",
   accepted: "bg-strike text-paper",
   rejected: "border-2 border-ink text-ink",
 };
@@ -260,6 +264,8 @@ export default function ApplicationsBrowser({
               ideaName={open.idea_name}
               initialStatus={open.status}
               initialNotes={open.notes}
+              initialInterviewRemarks={open.interview_remarks}
+              initialInterviewNextSteps={open.interview_next_steps}
             />
           </div>
         </div>
