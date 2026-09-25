@@ -28,20 +28,22 @@ function fmtDate(iso: string) {
 export default function DuplicatesBrowser({ groups }: { groups: Group[] }) {
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
-  async function removeOne(id: string) {
+  async function removeOne(id: string, notifyReason: string | null) {
     setBusyId(id);
     try {
       const res = await fetch("/api/admin/soft-delete-application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id, notifyReason }),
       });
       if (res.ok) {
         setRemovedIds((prev) => new Set(prev).add(id));
       }
     } finally {
       setBusyId(null);
+      setConfirmingId(null);
     }
   }
 
@@ -65,27 +67,61 @@ export default function DuplicatesBrowser({ groups }: { groups: Group[] }) {
             </div>
             <div className="flex flex-col divide-y-2 divide-ink/10">
               {visible.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex flex-wrap items-center justify-between gap-4 p-4"
-                >
-                  <div>
-                    <p className="font-bold">{item.full_name}</p>
-                    <p className="text-sm text-ink/70">
-                      {item.email} · {item.idea_name}
-                    </p>
-                    <p className="text-xs text-ink/40">
-                      Submitted {fmtDate(item.created_at)} · Status: {item.status}
-                    </p>
+                <div key={item.id} className="p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold">{item.full_name}</p>
+                      <p className="text-sm text-ink/70">
+                        {item.email} · {item.idea_name}
+                      </p>
+                      <p className="text-xs text-ink/40">
+                        Submitted {fmtDate(item.created_at)} · Status: {item.status}
+                      </p>
+                    </div>
+                    {confirmingId !== item.id && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(item.id)}
+                        disabled={busyId === item.id}
+                        className="border-2 border-ink px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-ink hover:text-paper disabled:opacity-50"
+                      >
+                        Move to Trash
+                      </button>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeOne(item.id)}
-                    disabled={busyId === item.id}
-                    className="border-2 border-ink px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-ink hover:text-paper disabled:opacity-50"
-                  >
-                    {busyId === item.id ? "Removing..." : "Move to Trash"}
-                  </button>
+
+                  {confirmingId === item.id && (
+                    <div className="mt-4 border-2 border-ink/30 p-4">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-widest text-ink/60">
+                        Notify them by email?
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => removeOne(item.id, null)}
+                          disabled={busyId === item.id}
+                          className="border-2 border-ink px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-ink hover:text-paper disabled:opacity-50"
+                        >
+                          Remove silently
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeOne(item.id, "no_response")}
+                          disabled={busyId === item.id}
+                          className="bg-strike px-4 py-2 text-xs font-bold uppercase tracking-widest text-paper hover:bg-ink disabled:opacity-50"
+                        >
+                          Remove + email them
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingId(null)}
+                          className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-ink/50 hover:text-ink"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
